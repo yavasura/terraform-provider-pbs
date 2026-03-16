@@ -132,7 +132,7 @@ func (r *datastoreResource) Schema(_ context.Context, _ resource.SchemaRequest, 
 				Validators: []validator.String{
 					stringvalidator.LengthBetween(1, 32),
 					stringvalidator.RegexMatches(
-						regexp.MustCompile(`^[a-zA-Z][a-zA-Z0-9\-]*$`),
+						regexp.MustCompile(`^[a-zA-Z][a-zA-Z0-9\-\_]*$`),
 						"Name must start with a letter and contain only letters, numbers, and hyphens.",
 					),
 				},
@@ -501,7 +501,7 @@ func (r *datastoreResource) Create(ctx context.Context, req resource.CreateReque
 		"success": err == nil,
 	})
 
-	if err != nil {
+if err != nil {
 		tflog.Error(ctx, "Failed to create datastore", map[string]any{
 			"name":  plan.Name.ValueString(),
 			"error": err.Error(),
@@ -512,7 +512,7 @@ func (r *datastoreResource) Create(ctx context.Context, req resource.CreateReque
 		)
 		return
 	}
-
+	
 	// Log that the resource was created
 	tflog.Info(ctx, "Datastore creation task completed successfully", map[string]any{
 		"name": plan.Name.ValueString(),
@@ -692,6 +692,10 @@ func (r *datastoreResource) Read(ctx context.Context, req resource.ReadRequest, 
 			"Could not convert datastore to state: "+err.Error(),
 		)
 		return
+	}
+	
+	if datastore.Disabled == nil && state.Disabled.IsNull() {
+		state.Disabled = types.BoolValue(false)
 	}
 
 	// Save updated data into Terraform state
@@ -1389,7 +1393,9 @@ func (r *datastoreResource) datastoreToState(ds *datastores.Datastore, state *da
 	state.Path = stringValueOrNull(ds.Path)
 	state.BackingDevice = stringValueOrNull(ds.BackingDevice)
 	state.Comment = stringValueOrNull(ds.Comment)
-	state.Disabled = boolValueOrNull(ds.Disabled)
+	if ds.Disabled != nil {
+		state.Disabled = types.BoolValue(*ds.Disabled)
+	}
 	state.GCSchedule = stringValueOrNull(ds.GCSchedule)
 	state.PruneSchedule = stringValueOrNull(ds.PruneSchedule)
 	state.KeepLast = intValueOrNull(ds.KeepLast)
@@ -1404,8 +1410,12 @@ func (r *datastoreResource) datastoreToState(ds *datastores.Datastore, state *da
 	state.NotifyLevel = stringValueOrNull(ds.NotifyLevel)
 	state.NotificationMode = stringValueOrNull(ds.NotificationMode)
 	state.VerifyNew = boolValueOrNull(ds.VerifyNew)
-	state.ReuseDatastore = boolValueOrNull(ds.ReuseDatastore)
-	state.OverwriteInUse = boolValueOrNull(ds.OverwriteInUse)
+	if ds.ReuseDatastore != nil {
+		state.ReuseDatastore = types.BoolValue(*ds.ReuseDatastore)
+	}
+	if ds.OverwriteInUse != nil {
+		state.OverwriteInUse = types.BoolValue(*ds.OverwriteInUse)
+	}
 	state.Fingerprint = stringValueOrNull(ds.Fingerprint)
 	state.Digest = types.StringValue(ds.Digest)
 

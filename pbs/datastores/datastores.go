@@ -448,6 +448,11 @@ func (c *Client) datastoreToMapForUpdate(ds *Datastore) map[string]interface{} {
 		body["delete"] = ds.Delete
 	}
 
+	
+	//update is not happy about these as these are create only. It might be there are more create only fields
+    delete(body, "reuse-datastore")
+	delete(body, "overwrite-in-use")
+
 	return body
 }
 
