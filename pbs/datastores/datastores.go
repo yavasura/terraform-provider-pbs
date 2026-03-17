@@ -139,6 +139,7 @@ func (c *Client) GetDatastore(ctx context.Context, name string) (*Datastore, err
 	}
 
 	resp, getErr := c.api.Get(ctx, path)
+	var unmarshalErr error
 
 	// CRITICAL DEBUG: Log the result
 	if getErr != nil {
@@ -154,7 +155,7 @@ func (c *Client) GetDatastore(ctx context.Context, name string) (*Datastore, err
 		}
 
 		var ds Datastore
-		if unmarshalErr := json.Unmarshal(resp.Data, &ds); unmarshalErr == nil {
+		if unmarshalErr = json.Unmarshal(resp.Data, &ds); unmarshalErr == nil {
 			ds.Name = name // Ensure name is set
 			if isDebugEnabled() {
 				tflog.Debug(ctx, "GetDatastore: Successfully unmarshaled datastore", map[string]interface{}{
@@ -228,12 +229,16 @@ func (c *Client) GetDatastore(ctx context.Context, name string) (*Datastore, err
 	for _, ds := range datastores {
 		if ds.Name == name {
 			if isDebugEnabled() {
-				tflog.Debug(ctx, "GetDatastore: Found in list (minimal data)", map[string]interface{}{
-					"name": name,
+				tflog.Debug(ctx, "GetDatastore: Found in list but detailed read is unavailable", map[string]interface{}{
+					"name":          name,
+					"get_error":     errorString(getErr),
+					"unmarshal_err": errorString(unmarshalErr),
 				})
 			}
-			// NOTE: This returns incomplete data - only Name and Path are populated from list
-			return &ds, nil
+			if getErr != nil {
+				return nil, fmt.Errorf("detailed datastore read failed for %s (list fallback confirmed existence): %w", name, getErr)
+			}
+			return nil, fmt.Errorf("detailed datastore read failed for %s: %w", name, unmarshalErr)
 		}
 	}
 
@@ -248,6 +253,13 @@ func (c *Client) GetDatastore(ctx context.Context, name string) (*Datastore, err
 		return nil, fmt.Errorf("datastore %s not found (GET error: %v)", name, getErr)
 	}
 	return nil, fmt.Errorf("datastore %s not found", name)
+}
+
+func errorString(err error) string {
+	if err == nil {
+		return ""
+	}
+	return err.Error()
 }
 
 // CreateDatastore creates a new datastore configuration
@@ -448,9 +460,8 @@ func (c *Client) datastoreToMapForUpdate(ds *Datastore) map[string]interface{} {
 		body["delete"] = ds.Delete
 	}
 
-	
 	//update is not happy about these as these are create only. It might be there are more create only fields
-    delete(body, "reuse-datastore")
+	delete(body, "reuse-datastore")
 	delete(body, "overwrite-in-use")
 
 	return body
