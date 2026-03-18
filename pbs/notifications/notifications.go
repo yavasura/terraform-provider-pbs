@@ -12,6 +12,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/url"
+	"strings"
 
 	"github.com/micah/terraform-provider-pbs/pbs/api"
 )
@@ -86,6 +87,17 @@ type WebhookTarget struct {
 	Comment string            `json:"comment,omitempty"`
 	Disable *bool             `json:"disable,omitempty"`
 	Origin  string            `json:"origin,omitempty"`
+}
+
+func isAPINotFoundError(err error, apiPath string) bool {
+	if err == nil || apiPath == "" {
+		return false
+	}
+
+	msg := err.Error()
+	expectedPath := "/api2/json" + apiPath
+
+	return strings.Contains(msg, "not found") && strings.Contains(msg, expectedPath)
 }
 
 // SMTP Target Methods
