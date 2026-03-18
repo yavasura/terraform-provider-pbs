@@ -1106,6 +1106,33 @@ func (r *datastoreResource) planToDatastore(plan *datastoreResourceModel, state 
 		if plan.OverwriteInUse.IsNull() && hasBoolValue(state.OverwriteInUse) {
 			addDelete("overwrite-in-use")
 		}
+		if shouldDeleteStringAttr(plan.Comment, state.Comment) {
+			addDelete("comment")
+		}
+		if shouldDeleteStringAttr(plan.GCSchedule, state.GCSchedule) {
+			addDelete("gc-schedule")
+		}
+		if shouldDeleteStringAttr(plan.Fingerprint, state.Fingerprint) {
+			addDelete("fingerprint")
+		}
+		if shouldDeleteInt64Attr(plan.KeepLast, state.KeepLast) {
+			addDelete("keep-last")
+		}
+		if shouldDeleteInt64Attr(plan.KeepHourly, state.KeepHourly) {
+			addDelete("keep-hourly")
+		}
+		if shouldDeleteInt64Attr(plan.KeepDaily, state.KeepDaily) {
+			addDelete("keep-daily")
+		}
+		if shouldDeleteInt64Attr(plan.KeepWeekly, state.KeepWeekly) {
+			addDelete("keep-weekly")
+		}
+		if shouldDeleteInt64Attr(plan.KeepMonthly, state.KeepMonthly) {
+			addDelete("keep-monthly")
+		}
+		if shouldDeleteInt64Attr(plan.KeepYearly, state.KeepYearly) {
+			addDelete("keep-yearly")
+		}
 		if len(deletes) > 0 {
 			ds.Delete = deletes
 		}
@@ -1134,6 +1161,10 @@ func hasBoolValue(value types.Bool) bool {
 	return !value.IsNull() && !value.IsUnknown()
 }
 
+func hasInt64Value(value types.Int64) bool {
+	return !value.IsNull() && !value.IsUnknown()
+}
+
 func isEmptyTuning(t *datastores.DatastoreTuning) bool {
 	if t == nil {
 		return true
@@ -1149,6 +1180,13 @@ func shouldDeleteStringAttr(plan types.String, state types.String) bool {
 		return state.ValueString() != ""
 	}
 	return false
+}
+
+func shouldDeleteInt64Attr(plan types.Int64, state types.Int64) bool {
+	if !hasInt64Value(state) {
+		return false
+	}
+	return plan.IsNull() || plan.IsUnknown()
 }
 
 func boolValueIsTrue(value types.Bool) bool {
