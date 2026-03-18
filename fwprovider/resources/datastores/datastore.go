@@ -501,7 +501,7 @@ func (r *datastoreResource) Create(ctx context.Context, req resource.CreateReque
 		"success": err == nil,
 	})
 
-if err != nil {
+	if err != nil {
 		tflog.Error(ctx, "Failed to create datastore", map[string]any{
 			"name":  plan.Name.ValueString(),
 			"error": err.Error(),
@@ -512,7 +512,7 @@ if err != nil {
 		)
 		return
 	}
-	
+
 	// Log that the resource was created
 	tflog.Info(ctx, "Datastore creation task completed successfully", map[string]any{
 		"name": plan.Name.ValueString(),
@@ -693,7 +693,7 @@ func (r *datastoreResource) Read(ctx context.Context, req resource.ReadRequest, 
 		)
 		return
 	}
-	
+
 	if datastore.Disabled == nil && state.Disabled.IsNull() {
 		state.Disabled = types.BoolValue(false)
 	}
@@ -751,8 +751,38 @@ func (r *datastoreResource) Update(ctx context.Context, req resource.UpdateReque
 	// Log that the resource was updated
 	tflog.Trace(ctx, "updated datastore resource", map[string]any{"name": plan.Name.ValueString()})
 
-	// Save updated data into Terraform state
-	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
+	updatedDatastore, err := r.client.Datastores.GetDatastore(ctx, plan.Name.ValueString())
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Error Reading Datastore After Update",
+			"Datastore was updated, but the refreshed state could not be read back: "+err.Error(),
+		)
+		return
+	}
+
+	refreshedState := plan
+	if err := r.datastoreToState(updatedDatastore, &refreshedState); err != nil {
+		resp.Diagnostics.AddError(
+			"Error Converting Datastore",
+			"Could not convert datastore to state after update: "+err.Error(),
+		)
+		return
+	}
+
+	if updatedDatastore.Disabled == nil && refreshedState.Disabled.IsNull() {
+		refreshedState.Disabled = types.BoolValue(false)
+	}
+
+	// Preserve fields the update API does not return reliably.
+	refreshedState.Removable = state.Removable
+	if refreshedState.BackingDevice.IsNull() {
+		refreshedState.BackingDevice = state.BackingDevice
+	}
+	if refreshedState.Path.IsNull() {
+		refreshedState.Path = state.Path
+	}
+
+	resp.Diagnostics.Append(resp.State.Set(ctx, &refreshedState)...)
 }
 
 // Delete deletes the resource and removes the Terraform state on success.
