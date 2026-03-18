@@ -8,6 +8,7 @@
 package pbs
 
 import (
+	"github.com/micah/terraform-provider-pbs/pbs/access"
 	"github.com/micah/terraform-provider-pbs/pbs/api"
 	"github.com/micah/terraform-provider-pbs/pbs/datastores"
 	"github.com/micah/terraform-provider-pbs/pbs/endpoints"
@@ -20,6 +21,7 @@ import (
 // Client represents the main PBS client interface
 type Client struct {
 	api           *api.Client
+	Access        *access.Client
 	Endpoints     *endpoints.Client
 	Datastores    *datastores.Client
 	Metrics       *metrics.Client
@@ -37,6 +39,7 @@ func NewClient(creds api.Credentials, opts api.ClientOptions) (*Client, error) {
 
 	return &Client{
 		api:           apiClient,
+		Access:        access.NewClient(apiClient),
 		Endpoints:     endpoints.NewClient(apiClient),
 		Datastores:    datastores.NewClient(apiClient),
 		Metrics:       metrics.NewClient(apiClient),
