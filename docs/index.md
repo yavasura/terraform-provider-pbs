@@ -23,7 +23,7 @@ terraform {
 }
 
 provider "pbs" {
-  address  = "https://pbs.example.com:8007"
+  endpoint = "https://pbs.example.com:8007"
   username = "admin@pbs"
   password = var.pbs_password
   insecure = false
@@ -38,7 +38,7 @@ The provider supports two authentication methods:
 
 ```terraform
 provider "pbs" {
-  address  = "https://pbs.example.com:8007"
+  endpoint = "https://pbs.example.com:8007"
   username = "admin@pbs"
   password = var.pbs_password
 }
@@ -48,7 +48,7 @@ provider "pbs" {
 
 ```terraform
 provider "pbs" {
-  address   = "https://pbs.example.com:8007"
+  endpoint  = "https://pbs.example.com:8007"
   api_token = var.pbs_api_token
 }
 ```
@@ -58,12 +58,12 @@ provider "pbs" {
 All provider configuration options can be set via environment variables:
 
 ```bash
-export PBS_ADDRESS="https://pbs.example.com:8007"
+export PBS_ENDPOINT="https://pbs.example.com:8007"
 export PBS_USERNAME="admin@pbs"
 export PBS_PASSWORD="your-password"
 # Or use API token instead
 export PBS_API_TOKEN="your-api-token"
-export PBS_INSECURE_TLS="false"
+export PBS_INSECURE="false"
 ```
 
 ## Notifications (PBS 4.0)
@@ -77,11 +77,11 @@ export PBS_INSECURE_TLS="false"
 
 ### Required
 
-- `address` (String) The URL of the Proxmox Backup Server (e.g., https://pbs.example.com:8007). Can be set via `PBS_ADDRESS` environment variable.
+- `endpoint` (String) The URL of the Proxmox Backup Server (e.g., https://pbs.example.com:8007). Can be set via `PBS_ENDPOINT` environment variable.
 
 ### Optional
 
 - `username` (String) PBS username (e.g., admin@pbs). Required if `api_token` is not set. Can be set via `PBS_USERNAME` environment variable.
 - `password` (String, Sensitive) PBS password. Required if `api_token` is not set. Can be set via `PBS_PASSWORD` environment variable.
 - `api_token` (String, Sensitive) PBS API token. Alternative to username/password authentication. Can be set via `PBS_API_TOKEN` environment variable.
-- `insecure` (Boolean) Skip TLS certificate verification. Useful for self-signed certificates. Defaults to `false`. Can be set via `PBS_INSECURE_TLS` environment variable.
+- `insecure` (Boolean) Skip TLS certificate verification. Useful for self-signed certificates. Defaults to `false`. Can be set via `PBS_INSECURE` environment variable.
