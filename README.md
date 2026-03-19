@@ -16,7 +16,7 @@ A Terraform provider for managing [Proxmox Backup Server](https://www.proxmox.co
 ## Requirements
 
 - [Terraform](https://www.terraform.io/downloads.html) >= 1.0
-- [Go](https://golang.org/doc/install) >= 1.21 (for building from source)
+- [Go](https://golang.org/doc/install) >= 1.24 (for building from source)
 - [Proxmox Backup Server](https://www.proxmox.com/en/proxmox-backup-server) >= 2.0
 
 ## Using the Provider
@@ -34,10 +34,10 @@ terraform {
 }
 
 provider "pbs" {
-  address     = "https://pbs.example.com:8007"
-  username    = "admin@pbs"
-  password    = var.pbs_password  # Or use API token
-  insecure    = false             # Set to true for self-signed certs
+  endpoint = "https://pbs.example.com:8007"
+  username = "admin@pbs"
+  password = var.pbs_password  # Or use API token
+  insecure = false             # Set to true for self-signed certs
 }
 ```
 
@@ -48,11 +48,11 @@ The provider can be configured using:
 1. **HCL Configuration** (as shown above)
 2. **Environment Variables**:
    ```bash
-   export PBS_ADDRESS="https://pbs.example.com:8007"
+   export PBS_ENDPOINT="https://pbs.example.com:8007"
    export PBS_USERNAME="admin@pbs"
    export PBS_PASSWORD="your-password"
    export PBS_API_TOKEN="your-api-token"  # Alternative to password
-   export PBS_INSECURE_TLS="false"
+   export PBS_INSECURE="false"
    ```
 
 ## Example Usage
@@ -83,19 +83,20 @@ resource "pbs_datastore" "removable" {
 
 ```hcl
 resource "pbs_s3_endpoint" "aws" {
-  name              = "aws-s3"
-  bucket            = "my-backup-bucket"
-  region            = "us-east-1"
-  access_key_id     = var.aws_access_key
-  secret_access_key = var.aws_secret_key
-  comment           = "AWS S3 storage"
+  id         = "aws-s3"
+  endpoint   = "s3.amazonaws.com"
+  region     = "us-east-1"
+  access_key = var.aws_access_key
+  secret_key = var.aws_secret_key
 }
 
 resource "pbs_datastore" "s3_backup" {
-  name    = "s3-backup"
-  s3_endpoint = pbs_s3_endpoint.aws.name
-  comment = "S3-backed datastore"
-  
+  name      = "s3-backup"
+  path      = "/var/lib/proxmox-backup/s3-cache/s3-backup"
+  s3_client = pbs_s3_endpoint.aws.id
+  s3_bucket = "my-backup-bucket"
+  comment   = "S3-backed datastore"
+
   depends_on = [pbs_s3_endpoint.aws]
 }
 ```
@@ -138,12 +139,11 @@ resource "pbs_datastore" "advanced" {
   }
 }
 ```
-```
-
 ## Available Resources
 
 - `pbs_datastore` - Manage PBS datastores
 - `pbs_s3_endpoint` - Manage S3 storage endpoints
+- `pbs_user` - Manage PBS user accounts
 
 For detailed documentation on each resource and data source, see the [Terraform Registry documentation](https://registry.terraform.io/providers/mcfitz2/pbs/latest/docs).
 
@@ -170,10 +170,10 @@ make install
 make test-unit
 
 # Integration tests (requires PBS instance)
-export PBS_ADDRESS="https://pbs.local:8007"
+export PBS_ENDPOINT="https://pbs.local:8007"
 export PBS_USERNAME="admin@pbs"
 export PBS_PASSWORD="your-password"
-export PBS_INSECURE_TLS="true"
+export PBS_INSECURE="true"
 make test
 ```
 
