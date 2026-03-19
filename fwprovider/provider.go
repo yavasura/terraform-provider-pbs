@@ -31,6 +31,7 @@ import (
 	datasourcesmetrics "github.com/micah/terraform-provider-pbs/fwprovider/datasources/metrics"
 	datasourcesnotifications "github.com/micah/terraform-provider-pbs/fwprovider/datasources/notifications"
 	"github.com/micah/terraform-provider-pbs/fwprovider/datasources/remotes"
+	resourcesaccess "github.com/micah/terraform-provider-pbs/fwprovider/resources/access"
 	"github.com/micah/terraform-provider-pbs/fwprovider/resources/datastores"
 	"github.com/micah/terraform-provider-pbs/fwprovider/resources/endpoints"
 	"github.com/micah/terraform-provider-pbs/fwprovider/resources/jobs"
@@ -271,6 +272,8 @@ func (p *pbsProvider) DataSources(_ context.Context) []func() datasource.DataSou
 // Resources defines the resources implemented in the provider.
 func (p *pbsProvider) Resources(_ context.Context) []func() resource.Resource {
 	return []func() resource.Resource{
+		// Access control
+		resourcesaccess.NewUserResource,
 		// Endpoints
 		endpoints.NewS3EndpointResource,
 		// Remotes
