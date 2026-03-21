@@ -155,30 +155,7 @@ func (d *syncJobsDataSource) Read(ctx context.Context, req datasource.ReadReques
 		}
 
 		var jobModel syncJobDataSourceModel
-		jobModel.ID = types.StringValue(job.ID)
-		jobModel.Store = types.StringValue(job.Store)
-		jobModel.Schedule = types.StringValue(job.Schedule)
-		jobModel.Remote = types.StringValue(job.Remote)
-		jobModel.RemoteStore = types.StringValue(job.RemoteStore)
-		jobModel.RemoteNamespace = stringToValue(job.RemoteNamespace)
-		jobModel.Namespace = stringToValue(job.Namespace)
-		jobModel.MaxDepth = intPtrToValue(job.MaxDepth)
-		jobModel.RemoveVanished = boolPtrToValue(job.RemoveVanished)
-		jobModel.Comment = stringToValue(job.Comment)
-		jobModel.Digest = types.StringValue(job.Digest)
-
-		// Convert group filter
-		if len(job.GroupFilter) > 0 {
-			groupFilterValues := make([]types.String, 0, len(job.GroupFilter))
-			for _, filter := range job.GroupFilter {
-				groupFilterValues = append(groupFilterValues, types.StringValue(filter))
-			}
-			listValue, diag := types.ListValueFrom(ctx, types.StringType, groupFilterValues)
-			resp.Diagnostics.Append(diag...)
-			jobModel.GroupFilter = listValue
-		} else {
-			jobModel.GroupFilter = types.ListNull(types.StringType)
-		}
+		resp.Diagnostics.Append(setSyncJobDataSourceState(ctx, &job, &jobModel)...)
 
 		state.Jobs = append(state.Jobs, jobModel)
 	}

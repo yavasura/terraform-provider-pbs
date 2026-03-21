@@ -174,7 +174,7 @@ func (d *pruneJobsDataSource) Read(ctx context.Context, req datasource.ReadReque
 			continue
 		}
 		var jobModel pruneJobDataSourceModel
-		pruneJobToState(&job, &jobModel)
+		setPruneJobDataSourceState(&job, &jobModel)
 		state.Jobs = append(state.Jobs, jobModel)
 	}
 

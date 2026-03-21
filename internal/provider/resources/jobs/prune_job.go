@@ -230,9 +230,7 @@ func (r *pruneJobResource) Update(ctx context.Context, req resource.UpdateReques
 		return
 	}
 
-	if (plan.Digest.IsNull() || plan.Digest.IsUnknown()) && !state.Digest.IsNull() && !state.Digest.IsUnknown() {
-		plan.Digest = state.Digest
-	}
+	plan.Digest = syncDigest(plan.Digest, state.Digest)
 
 	job := buildPruneJobFromPlan(&plan)
 	job.Delete = computePruneDeletes(&plan, &state)
@@ -268,12 +266,7 @@ func (r *pruneJobResource) Delete(ctx context.Context, req resource.DeleteReques
 		return
 	}
 
-	digest := ""
-	if !state.Digest.IsNull() && !state.Digest.IsUnknown() {
-		digest = state.Digest.ValueString()
-	}
-
-	err := r.client.Jobs.DeletePruneJob(ctx, state.ID.ValueString(), digest)
+	err := r.client.Jobs.DeletePruneJob(ctx, state.ID.ValueString(), digestString(state.Digest))
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error deleting prune job",
@@ -303,18 +296,12 @@ func buildPruneJobFromPlan(plan *pruneJobResourceModel) *jobs.PruneJob {
 	job.KeepYearly = intPointerFromAttr(plan.KeepYearly)
 	job.MaxDepth = intPointerFromAttr(plan.MaxDepth)
 
-	if !plan.Namespace.IsNull() && !plan.Namespace.IsUnknown() {
-		job.Namespace = plan.Namespace.ValueString()
-	}
-	if !plan.Comment.IsNull() && !plan.Comment.IsUnknown() {
-		job.Comment = plan.Comment.ValueString()
-	}
+	job.Namespace = stringAttrValue(plan.Namespace)
+	job.Comment = stringAttrValue(plan.Comment)
 	if ptr := boolPointerFromAttr(plan.Disable); ptr != nil {
 		job.Disable = ptr
 	}
-	if !plan.Digest.IsNull() && !plan.Digest.IsUnknown() {
-		job.Digest = plan.Digest.ValueString()
-	}
+	job.Digest = digestString(plan.Digest)
 
 	return job
 }
@@ -370,10 +357,6 @@ func setPruneStateFromAPI(job *jobs.PruneJob, state *pruneJobResourceModel) {
 	state.MaxDepth = int64ValueOrNull(job.MaxDepth)
 	state.Namespace = stringValueOrNull(job.Namespace)
 	state.Comment = stringValueOrNull(job.Comment)
-	if job.Disable != nil {
-		state.Disable = types.BoolValue(*job.Disable)
-	} else {
-		state.Disable = types.BoolValue(false)
-	}
+	state.Disable = boolValueOrDefault(job.Disable, false)
 	state.Digest = stringValueOrNull(job.Digest)
 }
