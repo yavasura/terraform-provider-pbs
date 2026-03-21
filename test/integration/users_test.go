@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -163,10 +164,18 @@ func TestUsersDockerSmoke(t *testing.T) {
 	tc := SetupTest(t)
 	usersClient := pbsaccess.NewClient(tc.APIClient)
 	userID := testUserID()
+	destroyedByTerraform := false
 
-	defer func() {
-		_ = usersClient.DeleteUser(context.Background(), userID, "")
-	}()
+	t.Cleanup(func() {
+		if destroyedByTerraform {
+			return
+		}
+
+		err := usersClient.DeleteUser(context.Background(), userID, "")
+		if err != nil && !isPBSUserMissingError(err, userID) {
+			t.Logf("cleanup warning: failed to delete %s directly: %v", userID, err)
+		}
+	})
 
 	initialConfig := fmt.Sprintf(`
 resource "pbs_user" "docker_smoke" {
@@ -176,15 +185,18 @@ resource "pbs_user" "docker_smoke" {
 }
 `, userID)
 
+	t.Logf("terraform apply: create resource pbs_user.docker_smoke for %s", userID)
 	tc.WriteMainTF(t, initialConfig)
 	tc.ApplyTerraform(t)
 
 	resource := tc.GetResourceFromState(t, "pbs_user.docker_smoke")
+	t.Logf("verified terraform state: pbs_user.docker_smoke.userid=%v comment=%v", resource.AttributeValues["userid"], resource.AttributeValues["comment"])
 	assert.Equal(t, userID, resource.AttributeValues["userid"])
 	assert.Equal(t, "Docker smoke test user", resource.AttributeValues["comment"])
 
 	user, err := usersClient.GetUser(context.Background(), userID)
 	require.NoError(t, err)
+	t.Logf("verified PBS API after create: user %s exists with comment=%q enabled=%v", user.UserID, user.Comment, user.Enable != nil && *user.Enable)
 	assert.Equal(t, userID, user.UserID)
 	assert.Equal(t, "Docker smoke test user", user.Comment)
 	if assert.NotNil(t, user.Enable) {
@@ -199,20 +211,25 @@ resource "pbs_user" "docker_smoke" {
 }
 `, userID)
 
+	t.Logf("terraform apply: update resource pbs_user.docker_smoke for %s", userID)
 	tc.WriteMainTF(t, updatedConfig)
 	tc.ApplyTerraform(t)
 
 	user, err = usersClient.GetUser(context.Background(), userID)
 	require.NoError(t, err)
+	t.Logf("verified PBS API after update: user %s has comment=%q enabled=%v", user.UserID, user.Comment, user.Enable != nil && *user.Enable)
 	assert.Equal(t, "Docker smoke test user updated", user.Comment)
 	if assert.NotNil(t, user.Enable) {
 		assert.False(t, *user.Enable)
 	}
 
+	t.Logf("terraform destroy: remove resource pbs_user.docker_smoke for %s", userID)
 	tc.DestroyTerraform(t)
+	destroyedByTerraform = true
 
 	_, err = usersClient.GetUser(context.Background(), userID)
 	require.Error(t, err)
+	t.Logf("verified PBS API after destroy: user %s no longer exists", userID)
 }
 
 func testUserID() string {
@@ -222,4 +239,17 @@ func testUserID() string {
 	}
 
 	return fmt.Sprintf("%s@%s", GenerateTestName("tfuser"), realm)
+}
+
+func isPBSUserMissingError(err error, userID string) bool {
+	if err == nil {
+		return false
+	}
+
+	msg := err.Error()
+	if !strings.Contains(msg, userID) {
+		return false
+	}
+
+	return strings.Contains(msg, "no such user") || strings.Contains(msg, "does not exist")
 }
