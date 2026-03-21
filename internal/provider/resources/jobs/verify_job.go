@@ -207,9 +207,7 @@ func (r *verifyJobResource) Update(ctx context.Context, req resource.UpdateReque
 		return
 	}
 
-	if (plan.Digest.IsNull() || plan.Digest.IsUnknown()) && !state.Digest.IsNull() && !state.Digest.IsUnknown() {
-		plan.Digest = state.Digest
-	}
+	plan.Digest = syncDigest(plan.Digest, state.Digest)
 
 	job := buildVerifyJobFromPlan(&plan)
 	job.Delete = computeVerifyDeletes(&plan, &state)
@@ -243,12 +241,7 @@ func (r *verifyJobResource) Delete(ctx context.Context, req resource.DeleteReque
 		return
 	}
 
-	digest := ""
-	if !state.Digest.IsNull() && !state.Digest.IsUnknown() {
-		digest = state.Digest.ValueString()
-	}
-
-	if err := r.client.Jobs.DeleteVerifyJob(ctx, state.ID.ValueString(), digest); err != nil {
+	if err := r.client.Jobs.DeleteVerifyJob(ctx, state.ID.ValueString(), digestString(state.Digest)); err != nil {
 		resp.Diagnostics.AddError(
 			"Error deleting verify job",
 			fmt.Sprintf("Could not delete verify job %s: %s", state.ID.ValueString(), err.Error()),
@@ -269,15 +262,9 @@ func buildVerifyJobFromPlan(plan *verifyJobResourceModel) *jobs.VerifyJob {
 		Schedule: plan.Schedule.ValueString(),
 	}
 
-	if !plan.Namespace.IsNull() && !plan.Namespace.IsUnknown() {
-		job.Namespace = plan.Namespace.ValueString()
-	}
-	if !plan.Comment.IsNull() && !plan.Comment.IsUnknown() {
-		job.Comment = plan.Comment.ValueString()
-	}
-	if !plan.Digest.IsNull() && !plan.Digest.IsUnknown() {
-		job.Digest = plan.Digest.ValueString()
-	}
+	job.Namespace = stringAttrValue(plan.Namespace)
+	job.Comment = stringAttrValue(plan.Comment)
+	job.Digest = digestString(plan.Digest)
 
 	job.IgnoreVerified = boolPointerFromAttr(plan.IgnoreVerified)
 	job.OutdatedAfter = intPointerFromAttr(plan.OutdatedAfter)
@@ -322,9 +309,5 @@ func setVerifyStateFromAPI(job *jobs.VerifyJob, state *verifyJobResourceModel) {
 	state.OutdatedAfter = int64ValueOrNull(job.OutdatedAfter)
 	state.MaxDepth = int64ValueOrNull(job.MaxDepth)
 
-	if job.IgnoreVerified != nil {
-		state.IgnoreVerified = types.BoolValue(*job.IgnoreVerified)
-	} else {
-		state.IgnoreVerified = types.BoolValue(false)
-	}
+	state.IgnoreVerified = boolValueOrDefault(job.IgnoreVerified, false)
 }

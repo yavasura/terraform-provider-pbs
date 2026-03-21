@@ -323,9 +323,7 @@ func (r *syncJobResource) Update(ctx context.Context, req resource.UpdateRequest
 		return
 	}
 
-	if (plan.Digest.IsNull() || plan.Digest.IsUnknown()) && !state.Digest.IsNull() && !state.Digest.IsUnknown() {
-		plan.Digest = state.Digest
-	}
+	plan.Digest = syncDigest(plan.Digest, state.Digest)
 
 	job, diags := buildSyncJobFromPlan(ctx, &plan)
 	resp.Diagnostics.Append(diags...)
@@ -368,12 +366,7 @@ func (r *syncJobResource) Delete(ctx context.Context, req resource.DeleteRequest
 		return
 	}
 
-	digest := ""
-	if !state.Digest.IsNull() && !state.Digest.IsUnknown() {
-		digest = state.Digest.ValueString()
-	}
-
-	if err := r.client.Jobs.DeleteSyncJob(ctx, state.ID.ValueString(), digest); err != nil {
+	if err := r.client.Jobs.DeleteSyncJob(ctx, state.ID.ValueString(), digestString(state.Digest)); err != nil {
 		resp.Diagnostics.AddError(
 			"Error deleting sync job",
 			fmt.Sprintf("Could not delete sync job %s: %s", state.ID.ValueString(), err.Error()),
@@ -397,12 +390,8 @@ func buildSyncJobFromPlan(ctx context.Context, plan *syncJobResourceModel) (*job
 		RemoteStore: plan.RemoteStore.ValueString(),
 	}
 
-	if !plan.RemoteNamespace.IsNull() && !plan.RemoteNamespace.IsUnknown() {
-		job.RemoteNamespace = plan.RemoteNamespace.ValueString()
-	}
-	if !plan.Namespace.IsNull() && !plan.Namespace.IsUnknown() {
-		job.Namespace = plan.Namespace.ValueString()
-	}
+	job.RemoteNamespace = stringAttrValue(plan.RemoteNamespace)
+	job.Namespace = stringAttrValue(plan.Namespace)
 
 	job.MaxDepth = intPointerFromAttr(plan.MaxDepth)
 	job.TransferLast = intPointerFromAttr(plan.TransferLast)
@@ -412,27 +401,13 @@ func buildSyncJobFromPlan(ctx context.Context, plan *syncJobResourceModel) (*job
 	job.VerifiedOnly = boolPointerFromAttr(plan.VerifiedOnly)
 	job.RunOnMount = boolPointerFromAttr(plan.RunOnMount)
 
-	if !plan.SyncDirection.IsNull() && !plan.SyncDirection.IsUnknown() {
-		job.SyncDirection = plan.SyncDirection.ValueString()
-	}
-	if !plan.Owner.IsNull() && !plan.Owner.IsUnknown() {
-		job.Owner = plan.Owner.ValueString()
-	}
-	if !plan.RateIn.IsNull() && !plan.RateIn.IsUnknown() {
-		job.RateIn = normalizeRateString(plan.RateIn.ValueString())
-	}
-	if !plan.RateOut.IsNull() && !plan.RateOut.IsUnknown() {
-		job.RateOut = normalizeRateString(plan.RateOut.ValueString())
-	}
-	if !plan.BurstIn.IsNull() && !plan.BurstIn.IsUnknown() {
-		job.BurstIn = normalizeRateString(plan.BurstIn.ValueString())
-	}
-	if !plan.BurstOut.IsNull() && !plan.BurstOut.IsUnknown() {
-		job.BurstOut = normalizeRateString(plan.BurstOut.ValueString())
-	}
-	if !plan.Comment.IsNull() && !plan.Comment.IsUnknown() {
-		job.Comment = plan.Comment.ValueString()
-	}
+	job.SyncDirection = stringAttrValue(plan.SyncDirection)
+	job.Owner = stringAttrValue(plan.Owner)
+	job.RateIn = normalizeRateString(stringAttrValue(plan.RateIn))
+	job.RateOut = normalizeRateString(stringAttrValue(plan.RateOut))
+	job.BurstIn = normalizeRateString(stringAttrValue(plan.BurstIn))
+	job.BurstOut = normalizeRateString(stringAttrValue(plan.BurstOut))
+	job.Comment = stringAttrValue(plan.Comment)
 
 	filters, filterDiags := stringListFromAttribute(ctx, plan.GroupFilter)
 	diags.Append(filterDiags...)
@@ -443,9 +418,7 @@ func buildSyncJobFromPlan(ctx context.Context, plan *syncJobResourceModel) (*job
 		job.GroupFilter = filters
 	}
 
-	if !plan.Digest.IsNull() && !plan.Digest.IsUnknown() {
-		job.Digest = plan.Digest.ValueString()
-	}
+	job.Digest = digestString(plan.Digest)
 
 	return job, diags
 }
@@ -557,31 +530,11 @@ func setSyncStateFromAPI(ctx context.Context, job *jobs.SyncJob, state *syncJobR
 	}
 	state.GroupFilter = groupFilter
 
-	if job.RemoveVanished != nil {
-		state.RemoveVanished = types.BoolValue(*job.RemoveVanished)
-	} else {
-		state.RemoveVanished = types.BoolValue(false)
-	}
-	if job.ResyncCorrupt != nil {
-		state.ResyncCorrupt = types.BoolValue(*job.ResyncCorrupt)
-	} else {
-		state.ResyncCorrupt = types.BoolValue(false)
-	}
-	if job.EncryptedOnly != nil {
-		state.EncryptedOnly = types.BoolValue(*job.EncryptedOnly)
-	} else {
-		state.EncryptedOnly = types.BoolValue(false)
-	}
-	if job.VerifiedOnly != nil {
-		state.VerifiedOnly = types.BoolValue(*job.VerifiedOnly)
-	} else {
-		state.VerifiedOnly = types.BoolValue(false)
-	}
-	if job.RunOnMount != nil {
-		state.RunOnMount = types.BoolValue(*job.RunOnMount)
-	} else {
-		state.RunOnMount = types.BoolValue(false)
-	}
+	state.RemoveVanished = boolValueOrDefault(job.RemoveVanished, false)
+	state.ResyncCorrupt = boolValueOrDefault(job.ResyncCorrupt, false)
+	state.EncryptedOnly = boolValueOrDefault(job.EncryptedOnly, false)
+	state.VerifiedOnly = boolValueOrDefault(job.VerifiedOnly, false)
+	state.RunOnMount = boolValueOrDefault(job.RunOnMount, false)
 
 	state.TransferLast = int64ValueOrNull(job.TransferLast)
 	state.SyncDirection = stringValueOrNull(job.SyncDirection)

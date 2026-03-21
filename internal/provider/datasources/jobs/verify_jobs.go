@@ -131,7 +131,7 @@ func (d *verifyJobsDataSource) Read(ctx context.Context, req datasource.ReadRequ
 			continue
 		}
 		var jobModel verifyJobDataSourceModel
-		verifyJobToState(&job, &jobModel)
+		setVerifyJobDataSourceState(&job, &jobModel)
 		state.Jobs = append(state.Jobs, jobModel)
 	}
 

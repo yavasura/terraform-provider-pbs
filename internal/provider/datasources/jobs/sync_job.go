@@ -16,7 +16,6 @@ import (
 
 	"github.com/yavasura/terraform-provider-pbs/internal/provider/config"
 	"github.com/yavasura/terraform-provider-pbs/internal/provider/tfstate"
-	"github.com/yavasura/terraform-provider-pbs/internal/provider/tfvalue"
 	"github.com/yavasura/terraform-provider-pbs/pbs"
 )
 
@@ -149,22 +148,7 @@ func (d *syncJobDataSource) Read(ctx context.Context, req datasource.ReadRequest
 		return
 	}
 
-	// Map API response to state
-	state.ID = types.StringValue(job.ID)
-	state.Store = types.StringValue(job.Store)
-	state.Schedule = types.StringValue(job.Schedule)
-	state.Remote = types.StringValue(job.Remote)
-	state.RemoteStore = types.StringValue(job.RemoteStore)
-	state.RemoteNamespace = tfvalue.StringOrNull(job.RemoteNamespace)
-	state.Namespace = tfvalue.StringOrNull(job.Namespace)
-	state.MaxDepth = tfvalue.IntPtrOrNull(job.MaxDepth)
-	state.RemoveVanished = tfvalue.BoolPtrOrNull(job.RemoveVanished)
-	state.Comment = tfvalue.StringOrNull(job.Comment)
-	state.Digest = types.StringValue(job.Digest)
-
-	groupFilter, diags := tfvalue.StringListOrNull(ctx, job.GroupFilter)
-	state.GroupFilter = groupFilter
-	resp.Diagnostics.Append(diags...)
+	resp.Diagnostics.Append(setSyncJobDataSourceState(ctx, job, &state)...)
 
 	tfstate.Encode(ctx, &resp.State, &state, &resp.Diagnostics)
 }

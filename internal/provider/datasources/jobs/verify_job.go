@@ -16,9 +16,7 @@ import (
 
 	"github.com/yavasura/terraform-provider-pbs/internal/provider/config"
 	"github.com/yavasura/terraform-provider-pbs/internal/provider/tfstate"
-	"github.com/yavasura/terraform-provider-pbs/internal/provider/tfvalue"
 	"github.com/yavasura/terraform-provider-pbs/pbs"
-	"github.com/yavasura/terraform-provider-pbs/pbs/jobs"
 )
 
 var (
@@ -131,21 +129,6 @@ func (d *verifyJobDataSource) Read(ctx context.Context, req datasource.ReadReque
 		return
 	}
 
-	// Map API response to state
-	verifyJobToState(job, &state)
-
+	setVerifyJobDataSourceState(job, &state)
 	tfstate.Encode(ctx, &resp.State, &state, &resp.Diagnostics)
-}
-
-// verifyJobToState converts a verify job struct to Terraform state
-func verifyJobToState(job *jobs.VerifyJob, state *verifyJobDataSourceModel) {
-	state.ID = types.StringValue(job.ID)
-	state.Store = types.StringValue(job.Store)
-	state.Schedule = types.StringValue(job.Schedule)
-	state.IgnoreVerified = tfvalue.BoolPtrOrNull(job.IgnoreVerified)
-	state.OutdatedAfter = tfvalue.IntPtrOrNull(job.OutdatedAfter)
-	state.Namespace = tfvalue.StringOrNull(job.Namespace)
-	state.MaxDepth = tfvalue.IntPtrOrNull(job.MaxDepth)
-	state.Comment = tfvalue.StringOrNull(job.Comment)
-	state.Digest = types.StringValue(job.Digest)
 }

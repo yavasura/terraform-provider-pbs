@@ -69,3 +69,31 @@ func stringListFromAttribute(ctx context.Context, list types.List) ([]string, di
 	diags := list.ElementsAs(ctx, &items, false)
 	return items, diags
 }
+
+func syncDigest(plan, state types.String) types.String {
+	if (plan.IsNull() || plan.IsUnknown()) && !state.IsNull() && !state.IsUnknown() {
+		return state
+	}
+	return plan
+}
+
+func digestString(attr types.String) string {
+	if attr.IsNull() || attr.IsUnknown() {
+		return ""
+	}
+	return attr.ValueString()
+}
+
+func boolValueOrDefault(value *bool, defaultValue bool) types.Bool {
+	if value == nil {
+		return types.BoolValue(defaultValue)
+	}
+	return types.BoolValue(*value)
+}
+
+func stringAttrValue(attr types.String) string {
+	if attr.IsNull() || attr.IsUnknown() {
+		return ""
+	}
+	return attr.ValueString()
+}

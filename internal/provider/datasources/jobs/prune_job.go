@@ -15,9 +15,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
 	"github.com/yavasura/terraform-provider-pbs/internal/provider/config"
-	"github.com/yavasura/terraform-provider-pbs/internal/provider/tfvalue"
+	"github.com/yavasura/terraform-provider-pbs/internal/provider/tfstate"
 	"github.com/yavasura/terraform-provider-pbs/pbs"
-	"github.com/yavasura/terraform-provider-pbs/pbs/jobs"
 )
 
 var (
@@ -146,8 +145,7 @@ func (d *pruneJobDataSource) Configure(_ context.Context, req datasource.Configu
 // Read refreshes the Terraform state with the latest data.
 func (d *pruneJobDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	var state pruneJobDataSourceModel
-	resp.Diagnostics.Append(req.Config.Get(ctx, &state)...)
-	if resp.Diagnostics.HasError() {
+	if !tfstate.Decode(ctx, req.Config, &state, &resp.Diagnostics) {
 		return
 	}
 
@@ -161,39 +159,6 @@ func (d *pruneJobDataSource) Read(ctx context.Context, req datasource.ReadReques
 		return
 	}
 
-	// Map API response to state
-	pruneJobToState(job, &state)
-
-	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
-}
-
-// pruneJobToState converts a prune job struct to Terraform state
-func pruneJobToState(job *jobs.PruneJob, state *pruneJobDataSourceModel) {
-	state.ID = types.StringValue(job.ID)
-	state.Store = types.StringValue(job.Store)
-	state.Schedule = types.StringValue(job.Schedule)
-	state.KeepLast = intPtrToValue(job.KeepLast)
-	state.KeepHourly = intPtrToValue(job.KeepHourly)
-	state.KeepDaily = intPtrToValue(job.KeepDaily)
-	state.KeepWeekly = intPtrToValue(job.KeepWeekly)
-	state.KeepMonthly = intPtrToValue(job.KeepMonthly)
-	state.KeepYearly = intPtrToValue(job.KeepYearly)
-	state.MaxDepth = intPtrToValue(job.MaxDepth)
-	state.Namespace = stringToValue(job.Namespace)
-	state.Comment = stringToValue(job.Comment)
-	state.Disable = boolPtrToValue(job.Disable)
-	state.Digest = types.StringValue(job.Digest)
-}
-
-// Helper functions
-func stringToValue(s string) types.String {
-	return tfvalue.StringOrNull(s)
-}
-
-func intPtrToValue(i *int) types.Int64 {
-	return tfvalue.IntPtrOrNull(i)
-}
-
-func boolPtrToValue(b *bool) types.Bool {
-	return tfvalue.BoolPtrOrNull(b)
+	setPruneJobDataSourceState(job, &state)
+	tfstate.Encode(ctx, &resp.State, &state, &resp.Diagnostics)
 }
