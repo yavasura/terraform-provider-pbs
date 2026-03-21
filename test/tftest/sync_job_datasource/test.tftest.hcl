@@ -6,10 +6,6 @@
 # 3. A sync job can be created that references both
 # 4. The sync job data source can read the job
 # 5. All attributes match between the resource and data source
-#
-# This was converted from a Go tfexec test that was flaky in CI due to
-# timing issues. The native Terraform test framework eliminates those issues
-# by using the same execution path as manual `terraform apply`.
 
 variables {
   # Generate unique names with timestamp to avoid conflicts

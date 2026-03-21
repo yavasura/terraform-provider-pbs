@@ -26,7 +26,7 @@ terraform test
 
 2. **Set environment variables:**
    ```bash
-   export TF_VAR_pbs_endpoint="https://192.168.1.108:8007"
+   export TF_VAR_pbs_endpoint="https://pbs.example.com:8007"
    export TF_VAR_pbs_username="root@pam"
    export TF_VAR_pbs_password="your-password"
    ```

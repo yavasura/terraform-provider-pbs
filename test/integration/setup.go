@@ -18,7 +18,7 @@ import (
 	tfjson "github.com/hashicorp/terraform-json"
 	"github.com/stretchr/testify/require"
 
-	"github.com/micah/terraform-provider-pbs/pbs/api"
+	"github.com/yavasura/terraform-provider-pbs/pbs/api"
 )
 
 // isDebugMode checks if PBS_DEBUG environment variable is set
@@ -43,19 +43,23 @@ type TestContext struct {
 
 // Config holds the test configuration for PBS integration tests
 type Config struct {
-	Address  string
+	Endpoint string
+	Insecure bool
 	Username string
 	Password string
 }
 
+const defaultProviderVersion = "1.0.0"
+
 // GetConfig loads test configuration from environment variables
 func GetConfig(t *testing.T) *Config {
-	address := os.Getenv("PBS_ADDRESS")
+	endpoint := os.Getenv("PBS_ENDPOINT")
+	insecure := os.Getenv("PBS_INSECURE") == "true"
 	username := os.Getenv("PBS_USERNAME")
 	password := os.Getenv("PBS_PASSWORD")
 
-	if address == "" {
-		t.Skip("PBS_ADDRESS not set, skipping integration tests")
+	if endpoint == "" {
+		t.Skip("PBS_ENDPOINT not set, skipping integration tests")
 	}
 	if username == "" {
 		t.Skip("PBS_USERNAME not set, skipping integration tests")
@@ -65,7 +69,8 @@ func GetConfig(t *testing.T) *Config {
 	}
 
 	return &Config{
-		Address:  address,
+		Endpoint: endpoint,
+		Insecure: insecure,
 		Username: username,
 		Password: password,
 	}
@@ -81,8 +86,8 @@ func SetupTest(t *testing.T) *TestContext {
 		Password: config.Password,
 	}
 	opts := api.ClientOptions{
-		Endpoint: config.Address,
-		Insecure: true, // For testing
+		Endpoint: config.Endpoint,
+		Insecure: config.Insecure,
 		Timeout:  30 * time.Second,
 	}
 	apiClient, err := api.NewClient(creds, opts)
@@ -136,8 +141,7 @@ func (tc *TestContext) WriteMainTF(t *testing.T, config string) {
 terraform {
   required_providers {
     pbs = {
-      source  = "registry.terraform.io/micah/pbs"
-      version = "1.0.0"
+      source  = "registry.terraform.io/yavasura/pbs"
     }
   }
 }
@@ -146,11 +150,11 @@ provider "pbs" {
   endpoint = "%s"
   username = "%s"
   password = "%s"
-  insecure = true
+  insecure = %t
 }
 
 %s
-`, tc.Config.Address, tc.Config.Username, tc.Config.Password, config)
+`, tc.Config.Endpoint, tc.Config.Username, tc.Config.Password, tc.Config.Insecure, config)
 
 	err := os.WriteFile(tc.Workdir+"/main.tf", []byte(mainTF), 0644)
 	require.NoError(t, err, "Failed to write main.tf")
@@ -174,7 +178,11 @@ func (tc *TestContext) setupLocalProvider(t *testing.T) {
 	}
 
 	// Create plugins directory structure using the separate plugins directory
-	pluginsDir := filepath.Join(tc.Workdir, "plugins", "registry.terraform.io", "micah", "pbs", "1.0.0", runtime.GOOS+"_"+runtime.GOARCH)
+	providerVersion := os.Getenv("TEST_PROVIDER_VERSION")
+	if providerVersion == "" {
+		providerVersion = readProviderVersion(providerPath)
+	}
+	pluginsDir := filepath.Join(tc.Workdir, "plugins", "registry.terraform.io", "yavasura", "pbs", providerVersion, runtime.GOOS+"_"+runtime.GOARCH)
 	err := os.MkdirAll(pluginsDir, 0755)
 	require.NoError(t, err, "Failed to create plugins directory")
 
@@ -186,6 +194,20 @@ func (tc *TestContext) setupLocalProvider(t *testing.T) {
 	// Make executable
 	err = os.Chmod(destPath, 0755)
 	require.NoError(t, err, "Failed to make provider executable")
+}
+
+func readProviderVersion(projectRoot string) string {
+	versionBytes, err := os.ReadFile(filepath.Join(projectRoot, "VERSION"))
+	if err != nil {
+		return defaultProviderVersion
+	}
+
+	version := strings.TrimSpace(string(versionBytes))
+	if version == "" {
+		return defaultProviderVersion
+	}
+
+	return version
 }
 
 // copyFile copies a file from src to dst

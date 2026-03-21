@@ -1,8 +1,6 @@
 # Terraform HCL Tests for PBS Provider
 #
 # This directory contains native Terraform tests using the `.tftest.hcl` format.
-# These tests were converted from Go tfexec tests to eliminate timing issues
-# that occurred in CI but not in manual testing.
 
 ## Directory Structure
 
@@ -30,7 +28,7 @@ test/tftest/
 Set these environment variables before running tests:
 
 ```bash
-export TF_VAR_pbs_endpoint="https://192.168.1.108:8007"
+export TF_VAR_pbs_endpoint="https://pbs.example.com:8007"
 export TF_VAR_pbs_username="root@pam"
 export TF_VAR_pbs_password="your-password"
 ```
@@ -38,7 +36,7 @@ export TF_VAR_pbs_password="your-password"
 Alternatively, create a `terraform.tfvars` file in each test directory:
 
 ```hcl
-pbs_endpoint = "https://192.168.1.108:8007"
+pbs_endpoint = "https://pbs.example.com:8007"
 pbs_username = "root@pam"
 pbs_password = "your-password"
 ```
@@ -109,28 +107,16 @@ These tests verify:
 - ✅ Sync job data source reads job correctly
 - ✅ All attributes match between resource and data source
 
-## Why HCL Tests?
-
-These tests were converted from Go `tfexec` tests because:
-
-1. **Timing Issues**: The tfexec harness had environment-specific timing issues where datastores appeared not to exist immediately after creation in CI, but manual `terraform apply` always worked.
-
-2. **Same Execution Path**: HCL tests use the same execution path as manual `terraform apply`, eliminating timing discrepancies.
-
-3. **Better Debugging**: Standard Terraform logging (`TF_LOG=DEBUG`) works naturally.
-
-4. **Cleaner Code**: No need for test harness code, workdir management, or manual state inspection.
-
 ## CI Integration
 
 ### GitHub Actions
 
-Add to `.github/workflows/vm-integration-tests.yml`:
+Add an equivalent step to your CI workflow:
 
 ```yaml
 - name: Run Terraform HCL Tests
   env:
-    TF_VAR_pbs_endpoint: ${{ env.PBS_ADDRESS }}
+    TF_VAR_pbs_endpoint: ${{ env.PBS_ENDPOINT }}
     TF_VAR_pbs_username: ${{ env.PBS_USERNAME }}
     TF_VAR_pbs_password: ${{ env.PBS_PASSWORD }}
   run: |
@@ -158,7 +144,7 @@ Create `terraform_override.tf` in each test directory:
 terraform {
   required_providers {
     pbs = {
-      source = "registry.terraform.io/micah/pbs"
+      source = "registry.terraform.io/yavasura/pbs"
     }
   }
 }
@@ -173,7 +159,7 @@ And add to `~/.terraformrc`:
 ```hcl
 provider_installation {
   dev_overrides {
-    "registry.terraform.io/micah/pbs" = "/path/to/terraform-provider-pbs"
+    "registry.terraform.io/yavasura/pbs" = "/path/to/terraform-provider-pbs"
   }
   direct {}
 }

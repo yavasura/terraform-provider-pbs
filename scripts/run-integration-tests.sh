@@ -20,14 +20,35 @@ NFS_PORT=2049
 CIFS_PORT=445
 GOTIFY_PORT=8080
 WEBHOOK_PORT=8081
+COMPOSE_CMD=()
 
-# PBS configuration (from environment or defaults)
-PBS_ADDRESS="${PBS_ADDRESS:-https://192.168.1.108:8007}"
+# PBS configuration
+PBS_ENDPOINT="${PBS_ENDPOINT:-https://pbs.example.com:8007}"
 PBS_USERNAME="${PBS_USERNAME:-root@pam}"
-PBS_PASSWORD="${PBS_PASSWORD:-pbspbs123}"
+PBS_INSECURE="${PBS_INSECURE:-true}"
+
+if [ -z "${PBS_PASSWORD:-}" ]; then
+    echo -e "${RED}PBS_PASSWORD must be set to run integration tests.${NC}" >&2
+    exit 1
+fi
+
+detect_compose_cmd() {
+    if command -v docker-compose >/dev/null 2>&1; then
+        COMPOSE_CMD=(docker-compose)
+        return
+    fi
+
+    if command -v docker >/dev/null 2>&1 && docker compose version >/dev/null 2>&1; then
+        COMPOSE_CMD=(docker compose)
+        return
+    fi
+
+    echo -e "${RED}Neither docker-compose nor 'docker compose' is available.${NC}" >&2
+    exit 1
+}
 
 # Get the PBS server's hostname/IP for calculating which local IP to use
-PBS_HOST=$(echo "$PBS_ADDRESS" | sed -E 's#https?://([^:/]+).*#\1#')
+PBS_HOST=$(echo "$PBS_ENDPOINT" | sed -E 's#https?://([^:/]+).*#\1#')
 
 # Function to get the local IP on the same subnet as PBS server
 get_local_ip() {
@@ -108,15 +129,17 @@ wait_for_service() {
 # Cleanup function
 cleanup() {
     echo -e "${YELLOW}Cleaning up Docker containers...${NC}"
-    docker-compose -f "${SCRIPT_DIR}/docker-compose.test.yml" down -v
+    "${COMPOSE_CMD[@]}" -f "${SCRIPT_DIR}/docker-compose.test.yml" down -v
 }
 
 # Register cleanup on exit
 trap cleanup EXIT INT TERM
 
+detect_compose_cmd
+
 # Start Docker services
 echo -e "${GREEN}Starting Docker services...${NC}"
-docker-compose -f "${SCRIPT_DIR}/docker-compose.test.yml" up -d
+"${COMPOSE_CMD[@]}" -f "${SCRIPT_DIR}/docker-compose.test.yml" up -d
 
 # Wait for services to be ready
 wait_for_service "InfluxDB" "localhost" ${INFLUXDB_PORT}
@@ -128,9 +151,10 @@ echo -e "${YELLOW}Waiting for services to fully initialize...${NC}"
 sleep 5
 
 # Set environment variables for tests
-export PBS_ADDRESS="${PBS_ADDRESS}"
+export PBS_ENDPOINT="${PBS_ENDPOINT}"
 export PBS_USERNAME="${PBS_USERNAME}"
 export PBS_PASSWORD="${PBS_PASSWORD}"
+export PBS_INSECURE="${PBS_INSECURE}"
 export TF_ACC=1
 
 # Service endpoints for tests (PBS needs to reach these, so use local IP not localhost)
@@ -161,7 +185,7 @@ else
 fi
 
 echo -e "${GREEN}Environment configured:${NC}"
-echo -e "  ${BLUE}PBS Server:${NC} ${PBS_ADDRESS} (${PBS_HOST})"
+echo -e "  ${BLUE}PBS Server:${NC} ${PBS_ENDPOINT} (${PBS_HOST})"
 echo -e "  ${BLUE}Local IP:${NC} ${LOCAL_IP} (for PBS to reach test services)"
 echo -e "  ${BLUE}Test Services:${NC}"
 echo "    - InfluxDB: ${TEST_INFLUXDB_HOST}:${TEST_INFLUXDB_PORT}"

@@ -13,7 +13,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-framework/providerserver"
 
-	"github.com/micah/terraform-provider-pbs/fwprovider"
+	"github.com/yavasura/terraform-provider-pbs/internal/provider"
 )
 
 // Run the docs generation tool. Can be used to re-generate or check the docs.
@@ -40,11 +40,11 @@ func main() {
 		// provider address is used in these tutorials in conjunction with a
 		// specific Terraform CLI configuration for manual development testing
 		// of this provider.
-		Address: "registry.terraform.io/micah/pbs",
+		Address: "registry.terraform.io/yavasura/pbs",
 		Debug:   debug,
 	}
 
-	err := providerserver.Serve(context.Background(), fwprovider.New(version), opts)
+	err := providerserver.Serve(context.Background(), provider.New(version), opts)
 
 	if err != nil {
 		log.Fatal(err.Error())

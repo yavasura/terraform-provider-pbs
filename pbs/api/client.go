@@ -193,7 +193,7 @@ func (c *Client) DoRequest(ctx context.Context, method, apiPath string, body int
 	startTime := time.Now()
 	resp, err := c.httpClient.Do(req)
 	elapsed := time.Since(startTime)
-	
+
 	if err != nil {
 		if isDebugEnabled() {
 			tflog.Debug(ctx, "API Request failed", map[string]interface{}{

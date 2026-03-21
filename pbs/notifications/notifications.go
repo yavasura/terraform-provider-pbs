@@ -14,7 +14,7 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/micah/terraform-provider-pbs/pbs/api"
+	"github.com/yavasura/terraform-provider-pbs/pbs/api"
 )
 
 // Client represents the notifications API client

@@ -1,10 +1,10 @@
 # Datastore Immutability Test
 
-This directory contains tests that validate the fix for issue #18: Datastore Backend Fields Should Be Immutable.
+This directory contains tests that validate datastore backend immutability.
 
-## Issue Background
+## Background
 
-Issue #18 identified a bug where updating a datastore with backend fields would fail with:
+Earlier provider behavior could fail datastore updates with:
 ```
 400 - schema does not allow additional properties
 ```
@@ -27,7 +27,7 @@ The test suite includes 5 run blocks:
 
 1. **setup** - Plans initial configuration
 2. **create_directory_datastore** - Creates the datastore and verifies all fields
-3. **reapply_without_changes** - Applies the same config again (tests issue #18 fix)
+3. **reapply_without_changes** - Applies the same config again to confirm stable no-op behavior
 4. **update_mutable_fields** - Updates `comment` and `gc_schedule` fields without recreation
 5. **plan_immutable_field_change** - Verifies changing `path` triggers replacement
 
@@ -50,7 +50,7 @@ TF_VAR_test_id="mytest" terraform test
 
 ## CI Integration
 
-This test is automatically run as part of the CI workflow in `.github/workflows/vm-integration-tests.yml`.
+This test can be run as part of your CI workflow.
 
 ## S3 Datastore Testing
 

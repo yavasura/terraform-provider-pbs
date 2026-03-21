@@ -6,10 +6,6 @@
 # 3. The prune jobs data source can list all jobs
 # 4. The prune jobs data source can filter by store
 # 5. Filtered results contain only jobs for the specified store
-#
-# This was converted from a Go tfexec test that was flaky in CI due to
-# timing issues. The native Terraform test framework eliminates those issues
-# by using the same execution path as manual `terraform apply`.
 
 variables {
   # Generate unique names with timestamp to avoid conflicts

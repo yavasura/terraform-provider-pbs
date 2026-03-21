@@ -1,0 +1,9 @@
+provider_installation {
+  filesystem_mirror {
+    # Replace with an absolute path to your local provider mirror directory.
+    path    = "/absolute/path/to/.terraform.d/plugins"
+    include = ["yavasura/pbs"]
+  }
+
+  direct {}
+}

@@ -4,9 +4,6 @@
 version: 1
 formatter: markdown
 
-header-from: docs/header.md
-footer-from: docs/footer.md
-
 sections:
   show:
     - providers
@@ -14,8 +11,6 @@ sections:
     - data-sources
 
 content: |-
-  {{ .Header }}
-
   {{ if .Providers -}}
   ## Providers
   
@@ -40,21 +35,19 @@ content: |-
   {{ end -}}
   {{ end -}}
 
-  {{ .Footer }}
-
 output:
   file: README.md
   mode: replace
 
 providers:
   - name: pbs
-    path: fwprovider/provider.go
+    path: internal/provider/provider.go
 
 resources:
   - name: pbs_datastore
-    path: fwprovider/datastore_resource.go
+    path: internal/provider/resources/datastores/datastore.go
   - name: pbs_s3_endpoint
-    path: fwprovider/s3_endpoint_resource.go
+    path: internal/provider/resources/endpoints/s3_endpoint.go
 
 sort:
   enabled: true

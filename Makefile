@@ -1,5 +1,9 @@
 NAME=terraform-provider-pbs
-VERSION=0.1.0
+VERSION ?= $(shell tr -d '\n' < VERSION)
+TEST_PROVIDER_VERSION ?= ${VERSION}
+GOOS ?= $(shell go env GOOS)
+GOARCH ?= $(shell go env GOARCH)
+PLUGIN_DIR=$(HOME)/.terraform.d/plugins/registry.terraform.io/yavasura/pbs/${VERSION}/${GOOS}_${GOARCH}
 
 default: build
 
@@ -9,8 +13,8 @@ build:
 
 .PHONY: install
 install: build
-	mkdir -p ~/.terraform.d/plugins/registry.terraform.io/micah/pbs/${VERSION}/darwin_amd64
-	cp ${NAME} ~/.terraform.d/plugins/registry.terraform.io/micah/pbs/${VERSION}/darwin_amd64/
+	mkdir -p ${PLUGIN_DIR}
+	cp ${NAME} ${PLUGIN_DIR}/
 
 .PHONY: test
 test:
@@ -22,7 +26,7 @@ test-unit:
 
 .PHONY: testacc
 testacc:
-	TF_ACC=1 go test ./fwprovider/... -v
+	./testacc
 
 .PHONY: lint
 lint:
@@ -49,8 +53,8 @@ release-test:
 release:
 	@echo "To create a release:"
 	@echo "  1. Ensure all changes are committed"
-	@echo "  2. Create and push a tag: git tag -a v0.1.0 -m 'Release v0.1.0'"
-	@echo "  3. Push the tag: git push origin v0.1.0"
+	@echo "  2. Create and push a tag: git tag -a v${VERSION} -m 'Release v${VERSION}'"
+	@echo "  3. Push the tag: git push origin v${VERSION}"
 	@echo "  4. GitHub Action will automatically build and publish"
 
 
@@ -59,6 +63,7 @@ help:
 	@echo "Available targets:"
 	@echo "  build         - Build the provider binary"
 	@echo "  install       - Build and install the provider locally"
+	@echo "                  Variables: VERSION, GOOS, GOARCH"
 	@echo "  test          - Run unit tests"
 	@echo "  testacc       - Run acceptance tests"
 	@echo "  lint          - Run linter"

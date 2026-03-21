@@ -74,7 +74,7 @@ release:
     terraform {
       required_providers {
         pbs = {
-          source  = "mcfitz2/pbs"
+          source  = "yavasura/pbs"
           version = "~> {{ .Major }}.{{ .Minor }}"
         }
       }
@@ -84,7 +84,7 @@ release:
     ### What's Changed
     
   footer: |
-    **Full Changelog**: https://github.com/mcfitz2/terraform-provider-pbs/compare/{{ .PreviousTag }}...{{ .Tag }}
+    **Full Changelog**: https://github.com/yavasura/terraform-provider-pbs/compare/{{ .PreviousTag }}...{{ .Tag }}
 
 changelog:
   use: github

@@ -17,7 +17,7 @@ import (
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-log/tflog"
-	"github.com/micah/terraform-provider-pbs/pbs/api"
+	"github.com/yavasura/terraform-provider-pbs/pbs/api"
 )
 
 // isDebugEnabled checks if debug logging should be enabled

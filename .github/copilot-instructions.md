@@ -1,13 +1,13 @@
 # GitHub Copilot Instructions for terraform-provider-pbs
 ## Project snapshot
-- Terraform provider targeting Proxmox Backup Server 4.0+, using HashiCorp terraform-plugin-framework (see `fwprovider/provider.go`).
-- Provider wiring hands a shared `pbs.Client` (built in `pbs/client.go`) into resources via `fwprovider/config`.
+- Terraform provider targeting Proxmox Backup Server 4.0+, using HashiCorp terraform-plugin-framework (see `internal/provider/provider.go`).
+- Provider wiring hands a shared `pbs.Client` (built in `pbs/client.go`) into resources via `internal/provider/config`.
 - HTTP interactions are wrapped by `pbs/api`, then domain clients under `pbs/datastores`, `pbs/endpoints`, `pbs/jobs`, etc.
 ## Key directories
-- `fwprovider/resources/**`: Terraform resource implementations; each file holds schema, CRUD, and helper translators.
+- `internal/provider/resources/**`: Terraform resource implementations; each file holds schema, CRUD, and helper translators.
 - `pbs/**`: Thin Go SDK mirroring PBS API endpoints, including async task handling and S3 backend parsing.
-- `test/integration`: Acceptance-style tests driven by Terraform CLI (`tfexec`), requires a built provider binary.
-- `scripts/docker-compose.test.yml` + `test/run_docker_tests.sh`: spins up PBS + auxiliaries (InfluxDB, Gotify, webhook, NFS, CIFS).
+- `test/integration`: Acceptance-style tests that exercise Terraform CLI flows and require a built provider binary.
+- `scripts/docker-compose.test.yml` + `scripts/run-integration-tests.sh`: spins up PBS-adjacent auxiliaries (InfluxDB, Gotify, webhook, NFS, CIFS) for integration coverage, using either `docker compose` or `docker-compose`.
 ## Implementation patterns
 - Resources follow a plan↔API converter pair (e.g., `planToDatastore`, `datastoreToState`) that lowercases enums and preserve credentials.
 - Updates must carry the PBS `digest` for optimistic locking and send `Delete` slices when Terraform nulls optional fields.
@@ -30,17 +30,17 @@
 - Tape & system namespaces expose many paths (e.g., `/tape/drive`, `/nodes/{node}/network`). Provider currently ignores them; if future work adds resources, follow existing regex/enum constraints and permission requirements from the spec.
 - Common patterns: most update endpoints expect `digest`, booleans default to `true`/`false` instead of omitting, and many parameters allow optional namespace strings up to 256 chars using PBS namespace regex. Preserve these constraints in validation.
 ## Provider configuration quirks
-- Terraform config expects `endpoint`, but the provider also reads env vars (`PBS_ENDPOINT`, `PBS_API_TOKEN`, etc.); tests still export `PBS_ADDRESS`, so set both when scripting.
+- Terraform config expects `endpoint`, and the provider reads env vars like `PBS_ENDPOINT`, `PBS_API_TOKEN`, `PBS_USERNAME`, and `PBS_PASSWORD`.
 - The `insecure` flag flows into TLS skip-verify—respect it when adding new clients.
 - `PBS_DESTROY_DATA_ON_DELETE=true` forces destructive cleanup during tests; honor it in delete paths.
 ## Adding or updating resources
-- Register new resources in `fwprovider/provider.go` so Terraform can discover them.
+- Register new resources in `internal/provider/provider.go` so Terraform can discover them.
 - Compose schema with plugin-framework validators and `planmodifier.UseStateForUnknown()` for computed-but-optional fields.
-- Translate Terraform types to API structs with helper converters (see `fwprovider/resources/jobs/helpers.go`) instead of re-implementing pointer plumbing.
+- Translate Terraform types to API structs with helper converters (see `internal/provider/resources/jobs/helpers.go`) instead of re-implementing pointer plumbing.
 - For nested config encoded as strings by PBS (notify, tuning, maintenance), reuse the formatter/parsers in `pbs/datastores`.
 ## Testing workflow
 - Run `make test` for Go unit coverage; `make testacc` toggles `TF_ACC` against the framework-level resources.
-- Integration suite: `scripts/run-integration-tests.sh` (runs docker services) or `test/run_docker_tests.sh` (local PBS container) after `go build .` produces `terraform-provider-pbs`.
+- Integration suite: `scripts/run-integration-tests.sh` after `go build .` produces `terraform-provider-pbs`.
 - When using the docker harness, Terraform state requires `NODE_PATH` adjustments already handled in `test/integration/setup.go`; avoid removing that logic.
 - Multi-provider S3 tests only execute if AWS/B2/Scaleway env vars are present; keep skips in place to allow partial credentials.
 ## Debugging tips
@@ -52,5 +52,5 @@
 - Metrics server tests rely on InfluxDB ports (8086/8089) exported via `TEST_INFLUXDB_*`; ensure new metrics resources respect those variables.
 - Notification endpoints treat `targets` as optional lists and preserve `origin` from the API—maintain those semantics during updates.
 ## Deployment
-- `make build` emits a local provider binary; `make install` copies it into `~/.terraform.d/plugins/registry.terraform.io/micah/pbs/${VERSION}/darwin_amd64/` for manual Terraform runs.
+- `make build` emits a local provider binary; `make install` copies it into `~/.terraform.d/plugins/registry.terraform.io/yavasura/pbs/${VERSION}/${GOOS}_${GOARCH}/` for manual Terraform runs.
 - Release builds are managed through GoReleaser (`make release-test`), so avoid introducing extra build steps without updating the workflow.

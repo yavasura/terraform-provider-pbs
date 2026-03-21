@@ -40,40 +40,34 @@ ignore:
 flags:
   unit-tests:
     paths:
-      - fwprovider/
+      - internal/provider/
       - pbs/
     carryforward: true        # Use previous coverage if test doesn't run
   
   integration-quick-datastore:
     paths:
-      - fwprovider/
+      - internal/provider/
       - test/integration/
     carryforward: true
   
   integration-s3-aws:
     paths:
-      - fwprovider/
+      - internal/provider/
       - test/integration/
     carryforward: true
   
   integration-s3-b2:
     paths:
-      - fwprovider/
+      - internal/provider/
       - test/integration/
     carryforward: true
   
   integration-s3-scaleway:
     paths:
-      - fwprovider/
+      - internal/provider/
       - test/integration/
     carryforward: true
   
-  vm-integration-tests:
-    paths:
-      - fwprovider/
-      - test/integration/
-    carryforward: true
-
 # Customize the Codecov GitHub checks
 github_checks:
   annotations: true           # Enable inline annotations on PRs

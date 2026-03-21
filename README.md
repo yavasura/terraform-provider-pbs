@@ -1,63 +1,55 @@
 # Terraform Provider for Proxmox Backup Server
 
 [![License](https://img.shields.io/badge/License-MPL--2.0-blue.svg)](https://opensource.org/licenses/MPL-2.0)
-[![Go Report Card](https://goreportcard.com/badge/github.com/mcfitz2/terraform-provider-pbs)](https://goreportcard.com/report/github.com/mcfitz2/terraform-provider-pbs)
+[![Go Report Card](https://goreportcard.com/badge/github.com/yavasura/terraform-provider-pbs)](https://goreportcard.com/report/github.com/yavasura/terraform-provider-pbs)
 
-A Terraform provider for managing [Proxmox Backup Server](https://www.proxmox.com/en/proxmox-backup-server) resources.
+Terraform / OpenTofu provider for managing [Proxmox Backup Server](https://www.proxmox.com/en/proxmox-backup-server).
 
-## Features
+## Compatibility
 
-- **Datastore Management**: Create and manage PBS datastores (directory, removable, and S3)
-- **PBS 4.0 Parity**: Configure maintenance windows, notification routing, tuning profiles, reuse flags, and sync levels introduced in PBS 4.0
-- **S3 Provider Support**: Configure S3-compatible storage backends (AWS, Backblaze B2, Scaleway)
-- **S3 Endpoints**: Manage S3 storage endpoints
-- **Full Terraform Lifecycle**: Complete support for create, read, update, delete, and import operations
+- Terraform >= 1.0
+- Go >= 1.24 for local builds
+- Proxmox Backup Server >= 2.0
 
-## Requirements
+The provider currently supports core PBS configuration domains including datastores, S3 endpoints, remotes, notifications, metrics, jobs, and users.
 
-- [Terraform](https://www.terraform.io/downloads.html) >= 1.0
-- [Go](https://golang.org/doc/install) >= 1.24 (for building from source)
-- [Proxmox Backup Server](https://www.proxmox.com/en/proxmox-backup-server) >= 2.0
+## Install
 
-## Using the Provider
-
-### From Terraform Registry
+### From the registry
 
 ```hcl
 terraform {
   required_providers {
     pbs = {
-      source  = "mcfitz2/pbs"
-      version = "~> 0.1"
+      source  = "yavasura/pbs"
+      version = "~> 1.0"
     }
   }
 }
+```
 
+### Provider configuration
+
+```hcl
 provider "pbs" {
   endpoint = "https://pbs.example.com:8007"
   username = "admin@pbs"
-  password = var.pbs_password  # Or use API token
-  insecure = false             # Set to true for self-signed certs
+  password = var.pbs_password
+  insecure = false
 }
 ```
 
-### Provider Configuration
+Environment variables are also supported:
 
-The provider can be configured using:
+```bash
+export PBS_ENDPOINT="https://pbs.example.com:8007"
+export PBS_USERNAME="admin@pbs"
+export PBS_PASSWORD="your-password"
+export PBS_API_TOKEN="user@realm!token=secret"
+export PBS_INSECURE="false"
+```
 
-1. **HCL Configuration** (as shown above)
-2. **Environment Variables**:
-   ```bash
-   export PBS_ENDPOINT="https://pbs.example.com:8007"
-   export PBS_USERNAME="admin@pbs"
-   export PBS_PASSWORD="your-password"
-   export PBS_API_TOKEN="your-api-token"  # Alternative to password
-   export PBS_INSECURE="false"
-   ```
-
-## Example Usage
-
-### Create a Directory Datastore
+## Example
 
 ```hcl
 resource "pbs_datastore" "backup" {
@@ -67,150 +59,118 @@ resource "pbs_datastore" "backup" {
 }
 ```
 
-### Create a Removable Datastore
+More examples are available in:
 
-```hcl
-resource "pbs_datastore" "removable" {
-  name           = "removable-backups"
-  path           = "/mnt/removable/removable-backups"
-  removable      = true
-  backing_device = "7d6fe83c-4c01-4a33-9ad0-9bc0216fb3e3" # UUID reported by PBS for the device
-  comment        = "Rotated removable media"
-}
-```
+- [examples/provider/provider.tf](examples/provider/provider.tf)
+- [examples/resources](examples/resources)
+- [examples/data-sources](examples/data-sources)
 
-### Create an S3 Datastore with AWS
+## Local Development
 
-```hcl
-resource "pbs_s3_endpoint" "aws" {
-  id         = "aws-s3"
-  endpoint   = "s3.amazonaws.com"
-  region     = "us-east-1"
-  access_key = var.aws_access_key
-  secret_key = var.aws_secret_key
-}
-
-resource "pbs_datastore" "s3_backup" {
-  name      = "s3-backup"
-  path      = "/var/lib/proxmox-backup/s3-cache/s3-backup"
-  s3_client = pbs_s3_endpoint.aws.id
-  s3_bucket = "my-backup-bucket"
-  comment   = "S3-backed datastore"
-
-  depends_on = [pbs_s3_endpoint.aws]
-}
-```
-
-### Configure PBS 4.0 Advanced Options
-
-```hcl
-resource "pbs_datastore" "advanced" {
-  name = "pbs-advanced"
-  path = "/mnt/datastore/pbs-advanced"
-
-  # Notification routing and delivery
-  notification_mode = "notification-system"
-  notify_user       = "root@pam"
-  notify_level      = "warning"
-  notify {
-    gc    = "always"
-    prune = "error"
-    sync  = "never"
-  }
-
-  # Maintenance window advertised to PBS clients
-  maintenance_mode {
-    type    = "read-only"
-    message = "Scheduled maintenance window"
-  }
-
-  # Reuse/verification toggles
-  verify_new      = true
-  reuse_datastore = true
-  overwrite_in_use = false
-
-  # Fine-grained tuning controls
-  tuning {
-    chunk_order          = "inode"
-    gc_atime_cutoff      = 3600
-    gc_atime_safety_check = true
-    gc_cache_capacity    = 512
-    sync_level           = "file"
-  }
-}
-```
-## Available Resources
-
-- `pbs_datastore` - Manage PBS datastores
-- `pbs_s3_endpoint` - Manage S3 storage endpoints
-- `pbs_user` - Manage PBS user accounts
-
-For detailed documentation on each resource and data source, see the [Terraform Registry documentation](https://registry.terraform.io/providers/mcfitz2/pbs/latest/docs).
-
-## Building from Source
+### Build and install
 
 ```bash
-# Clone the repository
-git clone https://github.com/mcfitz2/terraform-provider-pbs.git
-cd terraform-provider-pbs
-
-# Build the provider
 make build
-
-# Install locally for testing
 make install
 ```
 
-## Development
+This installs the provider into:
 
-### Running Tests
+`~/.terraform.d/plugins/registry.terraform.io/yavasura/pbs/${VERSION}/${GOOS}_${GOARCH}/`
+
+### Terraform CLI config
+
+For local provider development, copy [example.tfrc](example.tfrc) to `~/.terraformrc` and adjust the path if needed.
+
+### Testing
 
 ```bash
-# Unit tests
+# Unit and package tests
 make test-unit
 
-# Integration tests (requires PBS instance)
-export PBS_ENDPOINT="https://pbs.local:8007"
-export PBS_USERNAME="admin@pbs"
-export PBS_PASSWORD="your-password"
-export PBS_INSECURE="true"
-make test
+# Acceptance / integration tests
+PBS_ENDPOINT=https://pbs.local:8007 \
+PBS_USERNAME=root@pam \
+PBS_PASSWORD=secret \
+PBS_INSECURE=true \
+./testacc
+
+# Native Terraform HCL tests
+./test/tftest/run_hcl_tests.sh
 ```
 
-### Generating Documentation
+Additional integration testing notes live in:
 
-```bash
-make docs
-```
+- [docs/INTEGRATION_TESTS.md](docs/INTEGRATION_TESTS.md)
+- [test/README.md](test/README.md)
+- [test/tftest/README.md](test/tftest/README.md)
 
-## Contributing
+## Release Workflow
 
-Contributions are welcome! Please:
+Release automation is scaffolded with:
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes with tests
-4. Run `make lint` and `make test`
-5. Submit a pull request
+- `.github/workflows/release-please.yml`
+- `release-please-config.json`
+- `.release-please-manifest.json`
+- `.goreleaser.yml`
 
-## Security
+`release-please` prepares version PRs and changelog updates, and the tag-based release workflow builds and publishes release artifacts.
 
-This repository uses automated secret scanning with [gitleaks](https://github.com/gitleaks/gitleaks). A pre-commit hook prevents accidental credential commits.
+## Resources
 
-To report security vulnerabilities, please email security contact or create a private security advisory on GitHub.
+- `pbs_acl`
+- `pbs_api_token`
+- `pbs_datastore`
+- `pbs_namespace`
+- `pbs_s3_endpoint`
+- `pbs_remote`
+- `pbs_metrics_server`
+- `pbs_smtp_notification`
+- `pbs_gotify_notification`
+- `pbs_sendmail_notification`
+- `pbs_webhook_notification`
+- `pbs_notification_matcher`
+- `pbs_prune_job`
+- `pbs_sync_job`
+- `pbs_verify_job`
+- `pbs_user`
 
-## License
+Full resource docs are available in [docs/resources](docs/resources).
 
-This project is licensed under the Mozilla Public License 2.0 - see the [LICENSE](LICENSE) file for details.
+## Data Sources
 
-## Acknowledgments
+- `pbs_datastore`
+- `pbs_datastores`
+- `pbs_namespaces`
+- `pbs_prune_job`
+- `pbs_prune_jobs`
+- `pbs_sync_job`
+- `pbs_sync_jobs`
+- `pbs_verify_job`
+- `pbs_verify_jobs`
+- `pbs_metrics_server`
+- `pbs_metrics_servers`
+- `pbs_s3_endpoint`
+- `pbs_s3_endpoints`
+- `pbs_remote_stores`
+- `pbs_remote_namespaces`
+- `pbs_remote_groups`
+- `pbs_notification_endpoint`
+- `pbs_notification_endpoints`
+- `pbs_notification_matcher`
+- `pbs_notification_matchers`
 
-- [Proxmox Backup Server](https://www.proxmox.com/en/proxmox-backup-server) team
-- [Terraform Plugin Framework](https://github.com/hashicorp/terraform-plugin-framework)
-- All contributors to this project
+Full data source docs are available in [docs/data-sources](docs/data-sources).
+
+For the Terraform Registry view, see:
+
+https://registry.terraform.io/providers/yavasura/pbs/latest/docs
 
 ## Support
 
-- **Issues**: [GitHub Issues](https://github.com/mcfitz2/terraform-provider-pbs/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/mcfitz2/terraform-provider-pbs/discussions)
-- **Documentation**: [Terraform Registry](https://registry.terraform.io/providers/mcfitz2/pbs/latest/docs)
+- Issues: https://github.com/yavasura/terraform-provider-pbs/issues
+- Discussions: https://github.com/yavasura/terraform-provider-pbs/discussions
+
+## License
+
+Mozilla Public License 2.0. See [LICENSE](LICENSE).

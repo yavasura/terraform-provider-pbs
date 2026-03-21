@@ -1,4 +1,4 @@
-module github.com/micah/terraform-provider-pbs
+module github.com/yavasura/terraform-provider-pbs
 
 go 1.24.0
 
