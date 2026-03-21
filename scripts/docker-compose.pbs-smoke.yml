@@ -1,0 +1,16 @@
+services:
+  pbs:
+    image: ayufan/proxmox-backup-server:latest
+    container_name: pbs-provider-smoke
+    hostname: pbs
+    ports:
+      - "8007:8007"
+    tmpfs:
+      - /run
+      - /tmp
+    volumes:
+      - pbs-smoke-backups:/backups
+
+volumes:
+  pbs-smoke-backups:
+    driver: local

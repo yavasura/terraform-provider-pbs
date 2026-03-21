@@ -28,8 +28,14 @@ This repository currently keeps release automation in GitHub Actions and runs pr
   ./scripts/run-integration-tests.sh
   ```
 
+- Docker PBS smoke test for one real resource:
+  ```bash
+  go build -o terraform-provider-pbs .
+  ./scripts/run-docker-pbs-resource-test.sh
+  ```
+
 ## Notes
 
 - `./testacc` is the canonical acceptance/integration entrypoint.
 - `./scripts/run-integration-tests.sh` is a convenience wrapper for local Docker-backed testing.
-- There is currently no checked-in GitHub Actions integration-test workflow in this repository.
+- `.github/workflows/docker-pbs-resource-test.yml` boots a Docker PBS instance and runs the `pbs_user` smoke test in GitHub Actions.
