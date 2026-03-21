@@ -173,64 +173,9 @@ func (r *notificationMatcherResource) Create(ctx context.Context, req resource.C
 	matcher := &notifications.NotificationMatcher{
 		Name: plan.Name.ValueString(),
 	}
-
-	// Convert lists
-	if !plan.Targets.IsNull() {
-		var targets []string
-		diags := plan.Targets.ElementsAs(ctx, &targets, false)
-		resp.Diagnostics.Append(diags...)
-		if resp.Diagnostics.HasError() {
-			return
-		}
-		matcher.Targets = targets
-	}
-
-	if !plan.MatchSeverity.IsNull() {
-		var matchSeverity []string
-		diags := plan.MatchSeverity.ElementsAs(ctx, &matchSeverity, false)
-		resp.Diagnostics.Append(diags...)
-		if resp.Diagnostics.HasError() {
-			return
-		}
-		matcher.MatchSeverity = matchSeverity
-	}
-
-	if !plan.MatchField.IsNull() {
-		var matchField []string
-		diags := plan.MatchField.ElementsAs(ctx, &matchField, false)
-		resp.Diagnostics.Append(diags...)
-		if resp.Diagnostics.HasError() {
-			return
-		}
-		matcher.MatchField = matchField
-	}
-
-	if !plan.MatchCalendar.IsNull() {
-		var matchCalendar []string
-		diags := plan.MatchCalendar.ElementsAs(ctx, &matchCalendar, false)
-		resp.Diagnostics.Append(diags...)
-		if resp.Diagnostics.HasError() {
-			return
-		}
-		matcher.MatchCalendar = matchCalendar
-	}
-
-	if !plan.Mode.IsNull() {
-		matcher.Mode = plan.Mode.ValueString()
-	}
-
-	if !plan.InvertMatch.IsNull() {
-		invertMatch := plan.InvertMatch.ValueBool()
-		matcher.InvertMatch = &invertMatch
-	}
-
-	if !plan.Comment.IsNull() {
-		matcher.Comment = plan.Comment.ValueString()
-	}
-
-	if !plan.Disable.IsNull() {
-		disable := plan.Disable.ValueBool()
-		matcher.Disable = &disable
+	matcher = buildNotificationMatcher(ctx, &plan, nil, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
 	}
 
 	err := r.client.Notifications.CreateNotificationMatcher(ctx, matcher)
@@ -251,80 +196,9 @@ func (r *notificationMatcherResource) Create(ctx context.Context, req resource.C
 		return
 	}
 
-	plan.Name = types.StringValue(created.Name)
-
-	if len(created.Targets) > 0 {
-		targets, diags := types.ListValueFrom(ctx, types.StringType, created.Targets)
-		resp.Diagnostics.Append(diags...)
-		if resp.Diagnostics.HasError() {
-			return
-		}
-		plan.Targets = targets
-	} else {
-		plan.Targets = types.ListNull(types.StringType)
-	}
-
-	if len(created.MatchSeverity) > 0 {
-		matchSeverity, diags := types.ListValueFrom(ctx, types.StringType, created.MatchSeverity)
-		resp.Diagnostics.Append(diags...)
-		if resp.Diagnostics.HasError() {
-			return
-		}
-		plan.MatchSeverity = matchSeverity
-	} else {
-		plan.MatchSeverity = types.ListNull(types.StringType)
-	}
-
-	if len(created.MatchField) > 0 {
-		matchField, diags := types.ListValueFrom(ctx, types.StringType, created.MatchField)
-		resp.Diagnostics.Append(diags...)
-		if resp.Diagnostics.HasError() {
-			return
-		}
-		plan.MatchField = matchField
-	} else {
-		plan.MatchField = types.ListNull(types.StringType)
-	}
-
-	if len(created.MatchCalendar) > 0 {
-		matchCalendar, diags := types.ListValueFrom(ctx, types.StringType, created.MatchCalendar)
-		resp.Diagnostics.Append(diags...)
-		if resp.Diagnostics.HasError() {
-			return
-		}
-		plan.MatchCalendar = matchCalendar
-	} else {
-		plan.MatchCalendar = types.ListNull(types.StringType)
-	}
-
-	if created.Mode != "" {
-		plan.Mode = types.StringValue(created.Mode)
-	} else {
-		plan.Mode = types.StringValue("all")
-	}
-
-	if created.InvertMatch != nil {
-		plan.InvertMatch = types.BoolValue(*created.InvertMatch)
-	} else {
-		plan.InvertMatch = types.BoolValue(false)
-	}
-
-	if created.Comment != "" {
-		plan.Comment = types.StringValue(created.Comment)
-	} else {
-		plan.Comment = types.StringNull()
-	}
-
-	if created.Disable != nil {
-		plan.Disable = types.BoolValue(*created.Disable)
-	} else {
-		plan.Disable = types.BoolValue(false)
-	}
-
-	if created.Origin != "" {
-		plan.Origin = types.StringValue(created.Origin)
-	} else {
-		plan.Origin = types.StringNull()
+	setNotificationMatcherState(ctx, created, &plan, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
 	}
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, plan)...)
@@ -348,81 +222,9 @@ func (r *notificationMatcherResource) Read(ctx context.Context, req resource.Rea
 		return
 	}
 
-	// Update state with values from API
-	state.Name = types.StringValue(matcher.Name)
-
-	if len(matcher.Targets) > 0 {
-		targets, diags := types.ListValueFrom(ctx, types.StringType, matcher.Targets)
-		resp.Diagnostics.Append(diags...)
-		if resp.Diagnostics.HasError() {
-			return
-		}
-		state.Targets = targets
-	} else {
-		state.Targets = types.ListNull(types.StringType)
-	}
-
-	if len(matcher.MatchSeverity) > 0 {
-		matchSeverity, diags := types.ListValueFrom(ctx, types.StringType, matcher.MatchSeverity)
-		resp.Diagnostics.Append(diags...)
-		if resp.Diagnostics.HasError() {
-			return
-		}
-		state.MatchSeverity = matchSeverity
-	} else {
-		state.MatchSeverity = types.ListNull(types.StringType)
-	}
-
-	if len(matcher.MatchField) > 0 {
-		matchField, diags := types.ListValueFrom(ctx, types.StringType, matcher.MatchField)
-		resp.Diagnostics.Append(diags...)
-		if resp.Diagnostics.HasError() {
-			return
-		}
-		state.MatchField = matchField
-	} else {
-		state.MatchField = types.ListNull(types.StringType)
-	}
-
-	if len(matcher.MatchCalendar) > 0 {
-		matchCalendar, diags := types.ListValueFrom(ctx, types.StringType, matcher.MatchCalendar)
-		resp.Diagnostics.Append(diags...)
-		if resp.Diagnostics.HasError() {
-			return
-		}
-		state.MatchCalendar = matchCalendar
-	} else {
-		state.MatchCalendar = types.ListNull(types.StringType)
-	}
-
-	if matcher.Mode != "" {
-		state.Mode = types.StringValue(matcher.Mode)
-	} else {
-		state.Mode = types.StringValue("all")
-	}
-
-	if matcher.InvertMatch != nil {
-		state.InvertMatch = types.BoolValue(*matcher.InvertMatch)
-	} else {
-		state.InvertMatch = types.BoolValue(false)
-	}
-
-	if matcher.Comment != "" {
-		state.Comment = types.StringValue(matcher.Comment)
-	} else {
-		state.Comment = types.StringNull()
-	}
-
-	if matcher.Disable != nil {
-		state.Disable = types.BoolValue(*matcher.Disable)
-	} else {
-		state.Disable = types.BoolValue(false)
-	}
-
-	if matcher.Origin != "" {
-		state.Origin = types.StringValue(matcher.Origin)
-	} else {
-		state.Origin = types.StringNull()
+	setNotificationMatcherState(ctx, matcher, &state, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
 	}
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
@@ -444,70 +246,9 @@ func (r *notificationMatcherResource) Update(ctx context.Context, req resource.U
 		return
 	}
 
-	matcher := &notifications.NotificationMatcher{
-		Name: plan.Name.ValueString(),
-	}
-
-	// Compute fields to delete (present in state but null in plan)
-	matcher.Delete = computeMatcherDeletes(&plan, &state)
-
-	// Convert lists
-	if !plan.Targets.IsNull() {
-		var targets []string
-		diags := plan.Targets.ElementsAs(ctx, &targets, false)
-		resp.Diagnostics.Append(diags...)
-		if resp.Diagnostics.HasError() {
-			return
-		}
-		matcher.Targets = targets
-	}
-
-	if !plan.MatchSeverity.IsNull() {
-		var matchSeverity []string
-		diags := plan.MatchSeverity.ElementsAs(ctx, &matchSeverity, false)
-		resp.Diagnostics.Append(diags...)
-		if resp.Diagnostics.HasError() {
-			return
-		}
-		matcher.MatchSeverity = matchSeverity
-	}
-
-	if !plan.MatchField.IsNull() {
-		var matchField []string
-		diags := plan.MatchField.ElementsAs(ctx, &matchField, false)
-		resp.Diagnostics.Append(diags...)
-		if resp.Diagnostics.HasError() {
-			return
-		}
-		matcher.MatchField = matchField
-	}
-
-	if !plan.MatchCalendar.IsNull() {
-		var matchCalendar []string
-		diags := plan.MatchCalendar.ElementsAs(ctx, &matchCalendar, false)
-		resp.Diagnostics.Append(diags...)
-		if resp.Diagnostics.HasError() {
-			return
-		}
-		matcher.MatchCalendar = matchCalendar
-	}
-
-	if !plan.Mode.IsNull() {
-		matcher.Mode = plan.Mode.ValueString()
-	}
-
-	if !plan.InvertMatch.IsNull() {
-		invertMatch := plan.InvertMatch.ValueBool()
-		matcher.InvertMatch = &invertMatch
-	}
-
-	if !plan.Comment.IsNull() {
-		matcher.Comment = plan.Comment.ValueString()
-	}
-
-	if !plan.Disable.IsNull() {
-		disable := plan.Disable.ValueBool()
-		matcher.Disable = &disable
+	matcher := buildNotificationMatcher(ctx, &plan, &state, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
 	}
 
 	err := r.client.Notifications.UpdateNotificationMatcher(ctx, plan.Name.ValueString(), matcher)
@@ -528,80 +269,9 @@ func (r *notificationMatcherResource) Update(ctx context.Context, req resource.U
 		return
 	}
 
-	plan.Name = types.StringValue(updated.Name)
-
-	if len(updated.Targets) > 0 {
-		targets, diags := types.ListValueFrom(ctx, types.StringType, updated.Targets)
-		resp.Diagnostics.Append(diags...)
-		if resp.Diagnostics.HasError() {
-			return
-		}
-		plan.Targets = targets
-	} else {
-		plan.Targets = types.ListNull(types.StringType)
-	}
-
-	if len(updated.MatchSeverity) > 0 {
-		matchSeverity, diags := types.ListValueFrom(ctx, types.StringType, updated.MatchSeverity)
-		resp.Diagnostics.Append(diags...)
-		if resp.Diagnostics.HasError() {
-			return
-		}
-		plan.MatchSeverity = matchSeverity
-	} else {
-		plan.MatchSeverity = types.ListNull(types.StringType)
-	}
-
-	if len(updated.MatchField) > 0 {
-		matchField, diags := types.ListValueFrom(ctx, types.StringType, updated.MatchField)
-		resp.Diagnostics.Append(diags...)
-		if resp.Diagnostics.HasError() {
-			return
-		}
-		plan.MatchField = matchField
-	} else {
-		plan.MatchField = types.ListNull(types.StringType)
-	}
-
-	if len(updated.MatchCalendar) > 0 {
-		matchCalendar, diags := types.ListValueFrom(ctx, types.StringType, updated.MatchCalendar)
-		resp.Diagnostics.Append(diags...)
-		if resp.Diagnostics.HasError() {
-			return
-		}
-		plan.MatchCalendar = matchCalendar
-	} else {
-		plan.MatchCalendar = types.ListNull(types.StringType)
-	}
-
-	if updated.Mode != "" {
-		plan.Mode = types.StringValue(updated.Mode)
-	} else {
-		plan.Mode = types.StringValue("all")
-	}
-
-	if updated.InvertMatch != nil {
-		plan.InvertMatch = types.BoolValue(*updated.InvertMatch)
-	} else {
-		plan.InvertMatch = types.BoolValue(false)
-	}
-
-	if updated.Comment != "" {
-		plan.Comment = types.StringValue(updated.Comment)
-	} else {
-		plan.Comment = types.StringNull()
-	}
-
-	if updated.Disable != nil {
-		plan.Disable = types.BoolValue(*updated.Disable)
-	} else {
-		plan.Disable = types.BoolValue(false)
-	}
-
-	if updated.Origin != "" {
-		plan.Origin = types.StringValue(updated.Origin)
-	} else {
-		plan.Origin = types.StringNull()
+	setNotificationMatcherState(ctx, updated, &plan, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
 	}
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, plan)...)

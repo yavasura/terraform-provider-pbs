@@ -12,6 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/yavasura/terraform-provider-pbs/internal/provider/tfvalue"
+	pbsnotifications "github.com/yavasura/terraform-provider-pbs/pbs/notifications"
 )
 
 func shouldDeleteListAttr(plan, state types.List) bool {
@@ -53,4 +54,69 @@ func decodeStringList(ctx context.Context, value types.List, diags *diag.Diagnos
 		return nil
 	}
 	return items
+}
+
+func buildNotificationMatcher(ctx context.Context, plan, state *notificationMatcherResourceModel, diags *diag.Diagnostics) *pbsnotifications.NotificationMatcher {
+	matcher := &pbsnotifications.NotificationMatcher{
+		Name: plan.Name.ValueString(),
+	}
+
+	if state != nil {
+		matcher.Delete = computeMatcherDeletes(plan, state)
+	}
+
+	matcher.Targets = decodeStringList(ctx, plan.Targets, diags)
+	matcher.MatchSeverity = decodeStringList(ctx, plan.MatchSeverity, diags)
+	matcher.MatchField = decodeStringList(ctx, plan.MatchField, diags)
+	matcher.MatchCalendar = decodeStringList(ctx, plan.MatchCalendar, diags)
+	if diags.HasError() {
+		return nil
+	}
+
+	if !plan.Mode.IsNull() {
+		matcher.Mode = plan.Mode.ValueString()
+	}
+
+	if !plan.InvertMatch.IsNull() {
+		invertMatch := plan.InvertMatch.ValueBool()
+		matcher.InvertMatch = &invertMatch
+	}
+
+	if !plan.Comment.IsNull() {
+		matcher.Comment = plan.Comment.ValueString()
+	}
+
+	if !plan.Disable.IsNull() {
+		disable := plan.Disable.ValueBool()
+		matcher.Disable = &disable
+	}
+
+	return matcher
+}
+
+func setNotificationMatcherState(ctx context.Context, matcher *pbsnotifications.NotificationMatcher, state *notificationMatcherResourceModel, diags *diag.Diagnostics) {
+	state.Name = types.StringValue(matcher.Name)
+
+	state.Targets, *diags = listStateWithDiags(ctx, matcher.Targets, *diags)
+	state.MatchSeverity, *diags = listStateWithDiags(ctx, matcher.MatchSeverity, *diags)
+	state.MatchField, *diags = listStateWithDiags(ctx, matcher.MatchField, *diags)
+	state.MatchCalendar, *diags = listStateWithDiags(ctx, matcher.MatchCalendar, *diags)
+
+	state.Mode = types.StringValue("all")
+	if matcher.Mode != "" {
+		state.Mode = types.StringValue(matcher.Mode)
+	}
+
+	state.InvertMatch = types.BoolValue(false)
+	if matcher.InvertMatch != nil {
+		state.InvertMatch = types.BoolValue(*matcher.InvertMatch)
+	}
+
+	setNotificationCommonState(matcher.Comment, matcher.Disable, matcher.Origin, &state.Comment, &state.Disable, &state.Origin)
+}
+
+func listStateWithDiags(ctx context.Context, value []string, diags diag.Diagnostics) (types.List, diag.Diagnostics) {
+	list, listDiags := stringListState(ctx, value)
+	diags.Append(listDiags...)
+	return list, diags
 }
