@@ -50,6 +50,7 @@ type Config struct {
 }
 
 const defaultProviderVersion = "1.0.0"
+const defaultProviderSource = "yavasura/pbs"
 
 // GetConfig loads test configuration from environment variables
 func GetConfig(t *testing.T) *Config {
@@ -141,7 +142,7 @@ func (tc *TestContext) WriteMainTF(t *testing.T, config string) {
 terraform {
   required_providers {
     pbs = {
-      source  = "registry.terraform.io/yavasura/pbs"
+      source  = "registry.terraform.io/%s"
     }
   }
 }
@@ -154,7 +155,7 @@ provider "pbs" {
 }
 
 %s
-`, tc.Config.Endpoint, tc.Config.Username, tc.Config.Password, tc.Config.Insecure, config)
+`, providerSource(), tc.Config.Endpoint, tc.Config.Username, tc.Config.Password, tc.Config.Insecure, config)
 
 	err := os.WriteFile(tc.Workdir+"/main.tf", []byte(mainTF), 0644)
 	require.NoError(t, err, "Failed to write main.tf")
@@ -182,7 +183,8 @@ func (tc *TestContext) setupLocalProvider(t *testing.T) {
 	if providerVersion == "" {
 		providerVersion = readProviderVersion(providerPath)
 	}
-	pluginsDir := filepath.Join(tc.Workdir, "plugins", "registry.terraform.io", "yavasura", "pbs", providerVersion, runtime.GOOS+"_"+runtime.GOARCH)
+	namespace, providerType := providerSourceParts()
+	pluginsDir := filepath.Join(tc.Workdir, "plugins", "registry.terraform.io", namespace, providerType, providerVersion, runtime.GOOS+"_"+runtime.GOARCH)
 	err := os.MkdirAll(pluginsDir, 0755)
 	require.NoError(t, err, "Failed to create plugins directory")
 
@@ -208,6 +210,23 @@ func readProviderVersion(projectRoot string) string {
 	}
 
 	return version
+}
+
+func providerSource() string {
+	source := strings.TrimSpace(os.Getenv("TEST_PROVIDER_SOURCE"))
+	if source == "" {
+		return defaultProviderSource
+	}
+	return source
+}
+
+func providerSourceParts() (string, string) {
+	source := providerSource()
+	parts := strings.SplitN(source, "/", 2)
+	if len(parts) != 2 || parts[0] == "" || parts[1] == "" {
+		return "yavasura", "pbs"
+	}
+	return parts[0], parts[1]
 }
 
 // copyFile copies a file from src to dst

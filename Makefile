@@ -1,15 +1,21 @@
 NAME=terraform-provider-pbs
 VERSION ?= $(shell tr -d '\n' < VERSION)
 TEST_PROVIDER_VERSION ?= ${VERSION}
+PROVIDER_HOSTNAME ?= registry.terraform.io
+PROVIDER_NAMESPACE ?= yavasura
+PROVIDER_TYPE ?= pbs
+PROVIDER_SOURCE ?= ${PROVIDER_NAMESPACE}/${PROVIDER_TYPE}
+PROVIDER_ADDRESS ?= ${PROVIDER_HOSTNAME}/${PROVIDER_SOURCE}
+GO_LDFLAGS ?= -X main.providerAddress=${PROVIDER_ADDRESS}
 GOOS ?= $(shell go env GOOS)
 GOARCH ?= $(shell go env GOARCH)
-PLUGIN_DIR=$(HOME)/.terraform.d/plugins/registry.terraform.io/yavasura/pbs/${VERSION}/${GOOS}_${GOARCH}
+PLUGIN_DIR=$(HOME)/.terraform.d/plugins/${PROVIDER_HOSTNAME}/${PROVIDER_NAMESPACE}/${PROVIDER_TYPE}/${VERSION}/${GOOS}_${GOARCH}
 
 default: build
 
 .PHONY: build
 build:
-	go build -o ${NAME} .
+	go build -ldflags '${GO_LDFLAGS}' -o ${NAME} .
 
 .PHONY: install
 install: build
@@ -63,7 +69,7 @@ help:
 	@echo "Available targets:"
 	@echo "  build         - Build the provider binary"
 	@echo "  install       - Build and install the provider locally"
-	@echo "                  Variables: VERSION, GOOS, GOARCH"
+	@echo "                  Variables: VERSION, GOOS, GOARCH, PROVIDER_NAMESPACE, PROVIDER_TYPE, PROVIDER_HOSTNAME"
 	@echo "  test          - Run unit tests"
 	@echo "  testacc       - Run acceptance tests"
 	@echo "  lint          - Run linter"
