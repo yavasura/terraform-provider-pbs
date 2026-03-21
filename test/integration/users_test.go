@@ -155,6 +155,66 @@ resource "pbs_user" "imported" {
 	tc.ApplyTerraform(t)
 }
 
+func TestUsersDockerSmoke(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping integration test in short mode")
+	}
+
+	tc := SetupTest(t)
+	usersClient := pbsaccess.NewClient(tc.APIClient)
+	userID := testUserID()
+
+	defer func() {
+		_ = usersClient.DeleteUser(context.Background(), userID, "")
+	}()
+
+	initialConfig := fmt.Sprintf(`
+resource "pbs_user" "docker_smoke" {
+  userid  = "%s"
+  comment = "Docker smoke test user"
+  enable  = true
+}
+`, userID)
+
+	tc.WriteMainTF(t, initialConfig)
+	tc.ApplyTerraform(t)
+
+	resource := tc.GetResourceFromState(t, "pbs_user.docker_smoke")
+	assert.Equal(t, userID, resource.AttributeValues["userid"])
+	assert.Equal(t, "Docker smoke test user", resource.AttributeValues["comment"])
+
+	user, err := usersClient.GetUser(context.Background(), userID)
+	require.NoError(t, err)
+	assert.Equal(t, userID, user.UserID)
+	assert.Equal(t, "Docker smoke test user", user.Comment)
+	if assert.NotNil(t, user.Enable) {
+		assert.True(t, *user.Enable)
+	}
+
+	updatedConfig := fmt.Sprintf(`
+resource "pbs_user" "docker_smoke" {
+  userid  = "%s"
+  comment = "Docker smoke test user updated"
+  enable  = false
+}
+`, userID)
+
+	tc.WriteMainTF(t, updatedConfig)
+	tc.ApplyTerraform(t)
+
+	user, err = usersClient.GetUser(context.Background(), userID)
+	require.NoError(t, err)
+	assert.Equal(t, "Docker smoke test user updated", user.Comment)
+	if assert.NotNil(t, user.Enable) {
+		assert.False(t, *user.Enable)
+	}
+
+	tc.DestroyTerraform(t)
+
+	_, err = usersClient.GetUser(context.Background(), userID)
+	require.Error(t, err)
+}
+
 func testUserID() string {
 	realm := os.Getenv("PBS_TEST_USER_REALM")
 	if realm == "" {

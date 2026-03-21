@@ -1,0 +1,63 @@
+name: Docker PBS Resource Test
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/docker-pbs-resource-test.yml"
+      - "internal/provider/**"
+      - "pbs/**"
+      - "scripts/**"
+      - "test/integration/**"
+      - "go.mod"
+      - "go.sum"
+      - "main.go"
+      - "Makefile"
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/docker-pbs-resource-test.yml"
+      - "internal/provider/**"
+      - "pbs/**"
+      - "scripts/**"
+      - "test/integration/**"
+      - "go.mod"
+      - "go.sum"
+      - "main.go"
+      - "Makefile"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  pbs-user-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: false
+
+      - name: Build provider
+        run: go build -o terraform-provider-pbs .
+
+      - name: Run PBS user smoke test against Docker PBS
+        env:
+          PBS_ENDPOINT: https://127.0.0.1:8007
+          PBS_USERNAME: admin@pbs
+          PBS_PASSWORD: pbspbs
+          PBS_INSECURE: "true"
+          PBS_TEST_USER_REALM: pbs
+        run: ./scripts/run-docker-pbs-resource-test.sh '^TestUsersDockerSmoke$'
