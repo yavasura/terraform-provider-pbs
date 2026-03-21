@@ -62,7 +62,6 @@ The workflows generate several coverage files:
 - `coverage-aws.out` - AWS S3 integration tests
 - `coverage-b2.out` - Backblaze B2 integration tests
 - `coverage-scaleway.out` - Scaleway integration tests
-- `coverage-vm-integration.out` - Full VM integration tests
 
 Each is uploaded as a separate artifact and reported to Codecov with appropriate flags.
 
@@ -75,7 +74,6 @@ Codecov uses flags to organize coverage reports:
 - `integration-s3-aws` - AWS S3 tests
 - `integration-s3-b2` - Backblaze B2 tests
 - `integration-s3-scaleway` - Scaleway tests
-- `vm-integration-tests` - Full VM integration tests
 
 You can filter and compare coverage by these flags in the Codecov dashboard.
 
@@ -102,7 +100,7 @@ comment:
 flags:
   unit-tests:
     paths:
-      - fwprovider/
+      - internal/provider/
       - pbs/
   integration-tests:
     paths:

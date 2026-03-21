@@ -25,6 +25,14 @@ NC='\033[0m' # No Color
 # Get script directory
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+VERSION_FILE="${PROJECT_ROOT}/VERSION"
+DEFAULT_PROVIDER_VERSION="1.0.0"
+
+if [ -f "$VERSION_FILE" ]; then
+    DEFAULT_PROVIDER_VERSION="$(tr -d '\n' < "$VERSION_FILE")"
+fi
+
+PROVIDER_VERSION="${TEST_PROVIDER_VERSION:-${PROVIDER_VERSION:-$DEFAULT_PROVIDER_VERSION}}"
 
 echo -e "${BLUE}========================================${NC}"
 echo -e "${BLUE}Terraform HCL Test Runner${NC}"
@@ -57,7 +65,7 @@ if [ -z "$TF_VAR_pbs_endpoint" ] && [ ! -f "$SCRIPT_DIR/terraform.tfvars" ]; the
     echo -e "${YELLOW}⚠️  Warning: TF_VAR_pbs_endpoint not set and terraform.tfvars not found${NC}"
     echo -e "${YELLOW}   Please set environment variables or create terraform.tfvars files:${NC}"
     echo ""
-    echo "   export TF_VAR_pbs_endpoint=\"https://192.168.1.108:8007\""
+    echo "   export TF_VAR_pbs_endpoint=\"https://pbs.example.com:8007\""
     echo "   export TF_VAR_pbs_username=\"root@pam\""
     echo "   export TF_VAR_pbs_password=\"your-password\""
     echo ""
@@ -100,7 +108,7 @@ case "$OS" in
         ;;
 esac
 
-PLUGIN_DIR="$HOME/.terraform.d/plugins/registry.terraform.io/micah/pbs/1.0.0/${OS}_${ARCH}"
+PLUGIN_DIR="$HOME/.terraform.d/plugins/registry.terraform.io/yavasura/pbs/${PROVIDER_VERSION}/${OS}_${ARCH}"
 mkdir -p "$PLUGIN_DIR"
 cp "$PROJECT_ROOT/terraform-provider-pbs" "$PLUGIN_DIR/"
 chmod +x "$PLUGIN_DIR/terraform-provider-pbs"

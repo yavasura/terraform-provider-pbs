@@ -48,7 +48,7 @@ if [ ${#MISSING_VARS[@]} -gt 0 ]; then
     done
     echo ""
     echo "Example:"
-    echo "  export TF_VAR_pbs_endpoint='https://192.168.1.108:8007'"
+    echo "  export TF_VAR_pbs_endpoint='https://pbs.example.com:8007'"
     echo "  export TF_VAR_pbs_username='root@pam'"
     echo "  export TF_VAR_pbs_password='your-password'"
     exit 1

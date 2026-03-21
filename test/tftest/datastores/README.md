@@ -13,4 +13,4 @@ Tests directory-backed datastore lifecycle:
 
 ## Related Tests
 
-For S3 datastore immutability testing (issue #18), see: `test/tftest/datastore_immutability/`
+For datastore backend immutability coverage, see: `test/tftest/datastore_immutability/`

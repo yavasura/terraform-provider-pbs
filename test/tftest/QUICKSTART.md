@@ -2,11 +2,7 @@
 
 ## What Are These?
 
-These are **native Terraform tests** using the `.tftest.hcl` format introduced in Terraform v1.6.0. They replace two flaky Go integration tests that had timing issues with the `tfexec` test harness.
-
-## Why Convert?
-
-The converted tests (`TestPruneJobDataSourceIntegration` and `TestSyncJobDataSourceIntegration`) were failing in CI with "datastore not found" errors but worked perfectly when run manually. After extensive debugging, we determined this was a tfexec-specific timing issue, not a provider bug. Native Terraform tests eliminate this issue by using the same execution path as production usage.
+These are **native Terraform tests** using the `.tftest.hcl` format introduced in Terraform v1.6.0.
 
 ## Prerequisites
 
@@ -19,7 +15,7 @@ The converted tests (`TestPruneJobDataSourceIntegration` and `TestSyncJobDataSou
 ### 1. Set Environment Variables
 
 ```bash
-export TF_VAR_pbs_endpoint="https://192.168.1.108:8007"
+export TF_VAR_pbs_endpoint="https://pbs.example.com:8007"
 export TF_VAR_pbs_username="root@pam"
 export TF_VAR_pbs_password="your-password"
 ```
@@ -61,7 +57,6 @@ export TF_VAR_pbs_password="your-password"
 ## Documentation
 
 - **[README.md](README.md)** - Detailed usage instructions
-- **[TFEXEC_TO_HCL_MIGRATION.md](../../docs/TFEXEC_TO_HCL_MIGRATION.md)** - Full migration story and lessons learned
 
 ## CI Integration
 
@@ -88,5 +83,5 @@ terraform test -chdir=test/tftest/prune_job_datasource
 ## Status
 
 - ✅ All 4 HCL tests passing reliably in CI
-- ✅ Replace 4 flaky Go tests (now skipped)
-- ✅ Same test coverage, better reliability
+- ✅ Cover the same core datasource scenarios as the skipped Go tests
+- ✅ Use the native Terraform test framework

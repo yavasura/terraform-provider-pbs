@@ -2,8 +2,7 @@ terraform {
   required_version = ">= 1.6.0"
   required_providers {
     pbs = {
-      source  = "registry.terraform.io/micah/pbs"
-      version = "1.0.0"
+      source  = "registry.terraform.io/yavasura/pbs"
     }
   }
 }

@@ -1,4 +1,4 @@
-# Test to validate issue #18 fix: Datastore Backend Fields Should Be Immutable
+# Test to validate datastore backend immutability behavior
 #
 # This test validates that:
 # 1. Directory datastores can be created successfully
@@ -6,7 +6,7 @@
 # 3. Mutable fields (like comment, gc_schedule) can be updated without recreation
 # 4. Immutable fields (like path) trigger replacement when changed
 #
-# Issue: https://github.com/mcfitz2/terraform-provider-pbs/issues/18
+# Issue: https://github.com/yavasura/terraform-provider-pbs/issues/18
 # Note: Using directory datastore to avoid external S3 dependencies
 
 run "setup" {
@@ -51,8 +51,8 @@ run "create_directory_datastore" {
   }
 }
 
-# Issue #18: This apply would fail with "400 - schema does not allow additional properties"
-# because backend fields were being sent in the update request
+# Reapplying the same datastore should succeed without sending immutable
+# backend fields back to the PBS update endpoint.
 run "reapply_without_changes" {
   command = apply
   

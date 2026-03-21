@@ -13,7 +13,7 @@ import (
 	"fmt"
 	"net/url"
 
-	"github.com/micah/terraform-provider-pbs/pbs/api"
+	"github.com/yavasura/terraform-provider-pbs/pbs/api"
 )
 
 // Client represents the remotes API client
@@ -41,9 +41,9 @@ type Remote struct {
 
 // RemoteDatastore represents a datastore on a remote PBS server
 type RemoteDatastore struct {
-	Name        string              `json:"name"`
-	Comment     string              `json:"comment,omitempty"`
-	Maintenance *MaintenanceInfo    `json:"maintenance,omitempty"`
+	Name        string           `json:"name"`
+	Comment     string           `json:"comment,omitempty"`
+	Maintenance *MaintenanceInfo `json:"maintenance,omitempty"`
 }
 
 // MaintenanceInfo represents datastore maintenance status
@@ -117,9 +117,9 @@ func (c *Client) CreateRemote(ctx context.Context, remote *Remote) error {
 
 	// Convert struct to map for API request
 	body := map[string]interface{}{
-		"name":    remote.Name,
-		"host":    remote.Host,
-		"auth-id": remote.AuthID,
+		"name":     remote.Name,
+		"host":     remote.Host,
+		"auth-id":  remote.AuthID,
 		"password": remote.Password,
 	}
 
@@ -197,7 +197,7 @@ func (c *Client) DeleteRemote(ctx context.Context, name string, digest string) e
 	}
 
 	path := fmt.Sprintf("/config/remote/%s", url.PathEscape(name))
-	
+
 	// Include digest as query parameter if provided
 	if digest != "" {
 		path = fmt.Sprintf("%s?digest=%s", path, url.QueryEscape(digest))
@@ -264,7 +264,7 @@ func (c *Client) ListRemoteGroups(ctx context.Context, name string, store string
 	}
 
 	path := fmt.Sprintf("/config/remote/%s/scan/%s/groups", url.PathEscape(name), url.PathEscape(store))
-	
+
 	// Add namespace as query parameter if provided
 	if namespace != "" {
 		path = fmt.Sprintf("%s?namespace=%s", path, url.QueryEscape(namespace))

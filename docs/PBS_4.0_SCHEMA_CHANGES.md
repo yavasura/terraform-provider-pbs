@@ -255,80 +255,7 @@ PBS 4.0 introduces optional namespace scoping and stricter validation for filter
 Path '/api2/json/config/garbage-collection' not found.
 ```
 
-**Resolution:** GC configuration moved to datastore-level settings. The GC job resource needs to be either:
-1. Removed from provider (breaking change)
-2. Mapped to new datastore GC configuration endpoint
-3. Deprecated with migration guide
-
-## Implementation Plan
-
-### Phase 1: Metrics Resources
-1. Update `fwprovider/resources/metrics/metrics_server.go`:
-   - Add `url` field for HTTP type
-   - Add `host` field for UDP type
-   - Add `verify_tls` field
-   - Add `max_body_size` field
-   - Remove `timeout` field
-   - Keep `server` and `port` in schema for backwards compatibility, construct `url`/`host` in Create/Update
-
-2. Update `pbs/metrics/metrics.go` API client:
-   - Map between Terraform schema and PBS API schema
-   - HTTP: Build `url` from `server` + `port` or accept `url` directly
-   - UDP: Build `host` from `server` + `port` or accept `host` directly
-
-3. Update tests in `test/integration/metrics_test.go`:
-   - Test both old field format and new format
-   - Verify API accepts constructed values
-
-### Phase 2: Notification Resources
-1. Update SMTP resource `fwprovider/resources/notifications/smtp_notification.go`:
-   - Change `mailto` attribute to ListAttribute
-   - Convert single value to array for API
-
-2. Update Sendmail resource `fwprovider/resources/notifications/sendmail_notification.go`:
-   - Same `mailto` change
-
-3. Update Webhook resource `fwprovider/resources/notifications/webhook_notification.go`:
-   - Lowercase `method` enum values
-
-4. Update `pbs/notifications/notifications.go` API client:
-   - Handle array conversion for mailto
-
-5. Update tests in `test/integration/notifications_test.go`:
-   - Use array format for mailto
-   - Use lowercase method
-
-### Phase 3: Job Resources
-1. Update verify job `fwprovider/resources/jobs/verify_job.go`:
-   - Surface digest attribute and pass it through update/delete
-   - Preserve `disable` as optional bool and wire helpers for delete tracking
-   - Add schema validators for `outdated_after`/`max_depth` and namespace helper usage
-
-2. Update prune job `fwprovider/resources/jobs/prune_job.go`:
-   - Validate namespace format and support digest/delete handling
-   - Ensure helper conversions cover optional numeric and boolean fields
-
-3. Update sync job `fwprovider/resources/jobs/sync_job.go`:
-   - Support `remote_namespace` and namespace validators
-   - Require string-based rate/burst values and enforce group filter regex
-   - Keep `disable` optional while honoring digest/delete semantics
-
-4. Handle GC job `fwprovider/resources/jobs/gc_job.go`:
-   - Add deprecation notice
-   - Document that GC is now configured at datastore level
-
-5. Update `pbs/jobs/jobs.go` API client:
-   - Add pointer helpers/digest handling for verify, prune, and sync jobs
-   - Normalize optional values and propagate delete lists
-
-6. Update tests in `test/integration/jobs_test.go`:
-   - Cover new fields (remote namespace, digest expectations, namespace validation)
-   - Ensure rate limits are strings and group filters follow PBS regex
-
-### Phase 4: Integration Testing
-1. Run full test suite against PBS 4.0
-2. Verify backwards compatibility where possible
-3. Document breaking changes in CHANGELOG
+**Resolution:** GC configuration moved to datastore-level settings. This provider exposes PBS 4.0 garbage collection settings through the `pbs_datastore` resource and related datastore data sources. There is no separate GC job resource.
 
 ## Breaking Changes
 
@@ -357,22 +284,7 @@ Path '/api2/json/config/garbage-collection' not found.
    - Verify namespace values comply with PBS regex expectations
 
 6. **Jobs - GC:**
-   - Resource deprecated - configure GC at datastore level instead
-
-## Testing Checklist
-
-- [ ] Metrics InfluxDB HTTP create/read/update/delete
-- [ ] Metrics InfluxDB UDP create/read/update/delete
-- [x] SMTP notification with array mailto
-- [x] Sendmail notification with array mailto
-- [x] Webhook notification with lowercase method
-- [x] Gotify notification (already passing)
-- [x] Verification job digest/disable regression
-- [x] Prune job namespace validator coverage
-- [x] Sync job namespace + rate limit coverage
-- [ ] GC job deprecation warning
-- [ ] All S3 tests (already passing)
-- [ ] Backwards compatibility tests
+   - Configure GC through datastore settings instead of a separate job resource
 
 ## References
 

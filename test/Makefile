@@ -13,12 +13,13 @@ help:
 	@echo "  setup-dev         - Setup development environment"
 	@echo ""
 	@echo "Integration test environment variables:"
-	@echo "  PBS_ADDRESS       - PBS server address (e.g., https://pbs.example.com:8007)"
+	@echo "  PBS_ENDPOINT      - PBS server endpoint (e.g., https://pbs.example.com:8007)"
 	@echo "  PBS_USERNAME      - PBS username"
 	@echo "  PBS_PASSWORD      - PBS password"
+	@echo "  PBS_INSECURE      - Set to true for self-signed certificates"
 	@echo ""
 	@echo "Example integration test run:"
-	@echo "  PBS_ADDRESS=https://pbs.local:8007 PBS_USERNAME=admin PBS_PASSWORD=secret make test-integration"
+	@echo "  PBS_ENDPOINT=https://pbs.local:8007 PBS_USERNAME=admin PBS_PASSWORD=secret PBS_INSECURE=true make test-integration"
 
 # Build the provider
 build:
@@ -33,20 +34,7 @@ test-unit:
 
 # Run integration tests
 test-integration:
-	@if [ -z "$$PBS_ADDRESS" ]; then \
-		echo "Error: PBS_ADDRESS environment variable is required for integration tests"; \
-		echo "Example: PBS_ADDRESS=https://pbs.local:8007 PBS_USERNAME=admin PBS_PASSWORD=secret make test-integration"; \
-		exit 1; \
-	fi
-	@if [ -z "$$PBS_USERNAME" ]; then \
-		echo "Error: PBS_USERNAME environment variable is required for integration tests"; \
-		exit 1; \
-	fi
-	@if [ -z "$$PBS_PASSWORD" ]; then \
-		echo "Error: PBS_PASSWORD environment variable is required for integration tests"; \
-		exit 1; \
-	fi
-	go test -v -timeout 30m ./test/...
+	../testacc
 
 # Clean build artifacts
 clean:

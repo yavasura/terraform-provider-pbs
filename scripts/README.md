@@ -15,22 +15,22 @@ Run all integration tests with Docker services:
 Run a specific test:
 
 ```bash
-./scripts/run-integration-tests.sh "TestIntegration/Metrics/InfluxDBHTTP"
+./scripts/run-integration-tests.sh "TestMetricsServerVerifyCertificate"
 ```
 
 ### Prerequisites
 
-- Docker and Docker Compose installed
-- Go 1.22+ installed
-- Terraform 1.5+ installed
-- Access to a PBS 4.0 server (default: https://192.168.1.108:8007)
+- Docker installed, with either the `docker compose` plugin or the legacy `docker-compose` binary available
+- Go 1.24+ installed
+- Terraform 1.6+ installed
+- Access to a PBS 4.0 server
 
 ### Environment Variables
 
 You can customize the PBS connection:
 
 ```bash
-export PBS_ADDRESS="https://your-pbs-server:8007"
+export PBS_ENDPOINT="https://your-pbs-server:8007"
 export PBS_USERNAME="root@pam"
 export PBS_PASSWORD="your-password"
 ./scripts/run-integration-tests.sh
@@ -79,27 +79,27 @@ The test infrastructure includes:
 
 Start services only:
 ```bash
-docker-compose -f scripts/docker-compose.test.yml up -d
+docker compose -f scripts/docker-compose.test.yml up -d
 ```
 
 Stop services:
 ```bash
-docker-compose -f scripts/docker-compose.test.yml down
+docker compose -f scripts/docker-compose.test.yml down
 ```
 
 Stop services and remove volumes:
 ```bash
-docker-compose -f scripts/docker-compose.test.yml down -v
+docker compose -f scripts/docker-compose.test.yml down -v
 ```
 
 View logs:
 ```bash
-docker-compose -f scripts/docker-compose.test.yml logs -f
+docker compose -f scripts/docker-compose.test.yml logs -f
 ```
 
 ## GitHub Actions
 
-The services are automatically started in GitHub Actions workflows using the `services` configuration. See `.github/workflows/vm-integration-tests.yml` for the configuration.
+These services can be started in GitHub Actions workflows using the `services` configuration.
 
 ## Troubleshooting
 
@@ -122,7 +122,7 @@ The NFS and CIFS containers require privileged mode for proper operation. On som
 
 Ensure all services are healthy before running tests:
 ```bash
-docker-compose -f scripts/docker-compose.test.yml ps
+docker compose -f scripts/docker-compose.test.yml ps
 ```
 
 All services should show "healthy" status.

@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	pbsaccess "github.com/micah/terraform-provider-pbs/pbs/access"
+	pbsaccess "github.com/yavasura/terraform-provider-pbs/pbs/access"
 )
 
 func TestUsersIntegration(t *testing.T) {

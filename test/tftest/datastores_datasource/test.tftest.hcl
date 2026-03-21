@@ -5,10 +5,6 @@
 # 2. The datastores data source can list all datastores
 # 3. Test datastores appear in the list
 # 4. Datastore attributes are correctly populated
-#
-# This was converted from a Go tfexec test that was flaky in CI due to
-# timing issues. The native Terraform test framework eliminates those issues
-# by using the same execution path as manual `terraform apply`.
 
 variables {
   # Generate unique names with timestamp to avoid conflicts

@@ -11,104 +11,25 @@ func TestIntegration(t *testing.T) {
 	}
 
 	t.Run("Datastore", func(t *testing.T) {
-		// Test directory datastore functionality
-		t.Run("Directory", func(t *testing.T) {
-			TestDatastoreDirectoryIntegration(t)
-		})
-
-		// Test S3 datastore functionality
-		t.Run("S3", func(t *testing.T) {
-			TestS3DatastoreMultiProvider(t)
+		t.Run("Validation", func(t *testing.T) {
+			TestDatastoreValidation(t)
 		})
 	})
 
-	t.Run("S3Endpoints", func(t *testing.T) {
-		// Test S3 endpoint creation and management
-		TestS3EndpointMultiProvider(t)
-	})
-
-	t.Run("Jobs", func(t *testing.T) {
-		t.Run("PruneJob", func(t *testing.T) {
-			TestPruneJobIntegration(t)
-		})
-
-		t.Run("PruneJobWithFilters", func(t *testing.T) {
-			TestPruneJobWithFilters(t)
-		})
-
-		t.Run("SyncJob", func(t *testing.T) {
-			TestSyncJobIntegration(t)
-		})
-
-		t.Run("SyncJobWithGroupFilter", func(t *testing.T) {
-			TestSyncJobWithGroupFilter(t)
-		})
-
-		t.Run("VerifyJob", func(t *testing.T) {
-			TestVerifyJobIntegration(t)
-		})
-	})
-
-	t.Run("Notifications", func(t *testing.T) {
-		t.Run("SMTPTarget", func(t *testing.T) {
-			TestSMTPNotificationIntegration(t)
-		})
-
-		t.Run("GotifyTarget", func(t *testing.T) {
-			TestGotifyNotificationIntegration(t)
-		})
-
-		t.Run("SendmailTarget", func(t *testing.T) {
-			TestSendmailNotificationIntegration(t)
-		})
-
-		t.Run("WebhookTarget", func(t *testing.T) {
-			TestWebhookNotificationIntegration(t)
-		})
-
-		t.Run("NotificationMatcher", func(t *testing.T) {
-			TestNotificationMatcherIntegration(t)
-		})
-
-		t.Run("NotificationMatcherModes", func(t *testing.T) {
-			TestNotificationMatcherModes(t)
-		})
-
-		t.Run("NotificationMatcherWithCalendar", func(t *testing.T) {
-			TestNotificationMatcherWithCalendar(t)
-		})
-
-		t.Run("NotificationMatcherInvertMatch", func(t *testing.T) {
-			TestNotificationMatcherInvertMatch(t)
+	t.Run("Remotes", func(t *testing.T) {
+		t.Run("DataSources", func(t *testing.T) {
+			TestRemoteDataSources(t)
 		})
 	})
 
 	t.Run("Metrics", func(t *testing.T) {
-		t.Run("InfluxDBHTTP", func(t *testing.T) {
-			TestMetricsServerInfluxDBHTTPIntegration(t)
-		})
-
-		t.Run("InfluxDBUDP", func(t *testing.T) {
-			TestMetricsServerInfluxDBUDPIntegration(t)
-		})
-
-		t.Run("MetricsServerMTU", func(t *testing.T) {
-			TestMetricsServerMTU(t)
-		})
-
 		t.Run("MetricsServerVerifyCertificate", func(t *testing.T) {
 			TestMetricsServerVerifyCertificate(t)
-		})
-
-		t.Run("MetricsServerDisabled", func(t *testing.T) {
-			TestMetricsServerDisabled(t)
 		})
 
 		t.Run("MetricsServerMaxBodySize", func(t *testing.T) {
 			TestMetricsServerMaxBodySize(t)
 		})
-
-		// TestMetricsServerTimeout - skipped, PBS 4.0 removed timeout parameter
 	})
 }
 

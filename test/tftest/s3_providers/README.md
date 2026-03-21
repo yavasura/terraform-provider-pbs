@@ -106,7 +106,7 @@ terraform test -filter=tests/scaleway.tftest.hcl
 ## CI Integration
 
 These tests are automatically run in CI when the corresponding provider credentials are available:
-- Configured in `.github/workflows/vm-integration-tests.yml`
+- Configured in CI workflow automation
 - Each provider test runs independently
 - Tests are skipped if credentials are not set
 - S3 buckets are automatically cleaned up after each test
@@ -154,11 +154,6 @@ Ensure S3 credentials have full bucket permissions:
 
 - **Directory Datastore Tests**: `test/tftest/datastores/`
 - **Immutability Tests**: `test/tftest/datastore_immutability/`
-- **Legacy Go Tests**: `test/integration/s3_providers_test.go` (being replaced)
-
-## Migration from Go Tests
-
-These HCL tests replace the Go-based tfexec tests in `test/integration/s3_providers_test.go`:
 - ✅ Better bucket lifecycle management (Terraform-native)
 - ✅ No external bucket creation scripts needed
 - ✅ Automatic cleanup via Terraform destroy

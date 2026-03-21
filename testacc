@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+required_vars=(
+  PBS_ENDPOINT
+  PBS_USERNAME
+  PBS_PASSWORD
+)
+
+missing=()
+for name in "${required_vars[@]}"; do
+  if [ -z "${!name:-}" ]; then
+    missing+=("$name")
+  fi
+done
+
+if [ "${#missing[@]}" -gt 0 ]; then
+  echo "Missing required environment variables: ${missing[*]}" >&2
+  echo "Example:" >&2
+  echo "  PBS_ENDPOINT=https://pbs.local:8007 PBS_USERNAME=root@pam PBS_PASSWORD=secret PBS_INSECURE=true ./testacc" >&2
+  exit 1
+fi
+
+cd "${ROOT_DIR}"
+GOCACHE="${GOCACHE:-/tmp/gocache-testacc}" go test -v -timeout 30m ./test/...
