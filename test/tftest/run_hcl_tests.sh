@@ -27,12 +27,16 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 VERSION_FILE="${PROJECT_ROOT}/VERSION"
 DEFAULT_PROVIDER_VERSION="1.0.0"
+DEFAULT_PROVIDER_SOURCE="yavasura/pbs"
 
 if [ -f "$VERSION_FILE" ]; then
     DEFAULT_PROVIDER_VERSION="$(tr -d '\n' < "$VERSION_FILE")"
 fi
 
 PROVIDER_VERSION="${TEST_PROVIDER_VERSION:-${PROVIDER_VERSION:-$DEFAULT_PROVIDER_VERSION}}"
+PROVIDER_SOURCE="${TEST_PROVIDER_SOURCE:-${PROVIDER_SOURCE:-$DEFAULT_PROVIDER_SOURCE}}"
+PROVIDER_NAMESPACE="${PROVIDER_SOURCE%%/*}"
+PROVIDER_TYPE="${PROVIDER_SOURCE##*/}"
 
 echo -e "${BLUE}========================================${NC}"
 echo -e "${BLUE}Terraform HCL Test Runner${NC}"
@@ -108,7 +112,7 @@ case "$OS" in
         ;;
 esac
 
-PLUGIN_DIR="$HOME/.terraform.d/plugins/registry.terraform.io/yavasura/pbs/${PROVIDER_VERSION}/${OS}_${ARCH}"
+PLUGIN_DIR="$HOME/.terraform.d/plugins/registry.terraform.io/${PROVIDER_NAMESPACE}/${PROVIDER_TYPE}/${PROVIDER_VERSION}/${OS}_${ARCH}"
 mkdir -p "$PLUGIN_DIR"
 cp "$PROJECT_ROOT/terraform-provider-pbs" "$PLUGIN_DIR/"
 chmod +x "$PLUGIN_DIR/terraform-provider-pbs"
